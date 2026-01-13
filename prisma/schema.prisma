@@ -19,3 +19,16 @@ model GuildConfig {
 
   @@map("guild_configs")
 }
+
+// Projets ClickUp par serveur
+model GuildProject {
+  id        String   @id @default(cuid())
+  guildId   String
+  projectId String
+  projectName String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([guildId, projectId])
+  @@map("guild_projects")
+}

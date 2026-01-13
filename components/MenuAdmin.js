@@ -1,20 +1,14 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { adminHandlers } from './admin/adminHandlers.js';
 import { parametreHandlers } from './parametre/parametreHandlers.js';
+import { projetHandlers } from './projet/projetHandlers.js';
 import { clickupApiModal } from './parametre/clickup.js';
 
 const buttonHandlers = {
     ...adminHandlers,
     ...parametreHandlers,
+    ...projetHandlers,
     clickup_api_modal: clickupApiModal,
-    projet_button: async (interaction) => {
-        const embed = new EmbedBuilder()
-            .setTitle('📁 Section Projet')
-            .setDescription('Gestion des projets')
-            .setColor(0x5865F2);
-        
-        await interaction.update({ embeds: [embed], components: [] });
-    },
     responsable_button: async (interaction) => {
         const embed = new EmbedBuilder()
             .setTitle('👤 Section Responsable')
