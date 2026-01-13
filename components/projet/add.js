@@ -1,11 +1,11 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder } from 'discord.js';
-import { getAllClickUpProjects } from '../../utils/clickup.js';
+import { useGetAllProject } from '../../hook/clickup/useGetAllProject.js';
 import prisma from '../../utils/prisma.js';
 
 export async function projetAdd(interaction) {
     try {
         // Récupérer tous les projets depuis l'API ClickUp
-        const apiProjects = await getAllClickUpProjects(interaction.guild.id);
+        const apiProjects = await useGetAllProject(interaction.guild.id);
         
         if (!apiProjects || apiProjects.length === 0) {
             const embed = new EmbedBuilder()
@@ -105,7 +105,7 @@ export async function projetAddSelect(interaction) {
         const projectId = interaction.values[0];
         
         // Récupérer le nom du projet depuis l'API
-        const apiProjects = await getAllClickUpProjects(interaction.guild.id);
+        const apiProjects = await useGetAllProject(interaction.guild.id);
         const selectedProject = apiProjects.find(p => p.id === projectId);
         
         if (!selectedProject) {
