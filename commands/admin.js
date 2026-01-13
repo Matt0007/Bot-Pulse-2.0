@@ -38,7 +38,7 @@ export default {
                     .setStyle(ButtonStyle.Primary),
                 new ButtonBuilder()
                     .setCustomId('hour_button')
-                    .setLabel('Hour')
+                    .setLabel('Heure')
                     .setStyle(ButtonStyle.Primary),
                 new ButtonBuilder()
                     .setCustomId('parametre_button')

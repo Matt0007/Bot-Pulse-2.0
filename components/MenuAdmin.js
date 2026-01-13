@@ -2,29 +2,17 @@ import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'disc
 import { adminHandlers } from './admin/adminHandlers.js';
 import { parametreHandlers } from './parametre/parametreHandlers.js';
 import { projetHandlers } from './projet/projetHandlers.js';
+import { responsableHandlers } from './responsable/responsableHandlers.js';
+import { hourHandlers } from './hour/hourHandlers.js';
 import { clickupApiModal } from './parametre/clickup.js';
 
 const buttonHandlers = {
     ...adminHandlers,
     ...parametreHandlers,
     ...projetHandlers,
+    ...responsableHandlers,
+    ...hourHandlers,
     clickup_api_modal: clickupApiModal,
-    responsable_button: async (interaction) => {
-        const embed = new EmbedBuilder()
-            .setTitle('👤 Section Responsable')
-            .setDescription('Gestion des responsables')
-            .setColor(0x5865F2);
-        
-        await interaction.update({ embeds: [embed], components: [] });
-    },
-    hour_button: async (interaction) => {
-        const embed = new EmbedBuilder()
-            .setTitle('⏰ Section Hour')
-            .setDescription('Gestion des heures')
-            .setColor(0x5865F2);
-        
-        await interaction.update({ embeds: [embed], components: [] });
-    },
     back_to_main: async (interaction) => {
         const userName = interaction.user.displayName || interaction.user.username;
         
@@ -49,7 +37,7 @@ const buttonHandlers = {
                     .setStyle(ButtonStyle.Primary),
                 new ButtonBuilder()
                     .setCustomId('hour_button')
-                    .setLabel('Hour')
+                    .setLabel('Heure')
                     .setStyle(ButtonStyle.Primary),
                 new ButtonBuilder()
                     .setCustomId('parametre_button')
