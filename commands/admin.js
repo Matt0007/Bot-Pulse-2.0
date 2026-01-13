@@ -1,0 +1,50 @@
+import { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } from 'discord.js';
+
+export default {
+    data: new SlashCommandBuilder()
+        .setName('admin')
+        .setDescription('Accéder au panneau d\'administration'),
+    
+    async execute(interaction) {
+        // Vérifier que la commande est utilisée dans le channel bot-pulse-admin
+        if (interaction.channel.name !== 'bot-pulse-admin') {
+            await interaction.reply({
+                content: '❌ Cette commande ne peut être utilisée que dans le channel `bot-pulse-admin`.',
+                ephemeral: true
+            });
+            return;
+        }
+        
+        const userName = interaction.user.displayName || interaction.user.username;
+        
+        const embed = new EmbedBuilder()
+            .setTitle('👋 Bienvenue dans le panneau admin')
+            .setDescription(`Bonjour ${userName} !\nQue puis-je faire pour vous ?`)
+            .setColor(0x5865F2); // Couleur Discord bleue
+        
+        const Buttons = new ActionRowBuilder()
+            .addComponents(
+                new ButtonBuilder()
+                    .setCustomId('admin_button')
+                    .setLabel('Admin')
+                    .setStyle(ButtonStyle.Primary),
+                new ButtonBuilder()
+                    .setCustomId('projet_button')
+                    .setLabel('Projet')
+                    .setStyle(ButtonStyle.Primary),
+                new ButtonBuilder()
+                    .setCustomId('responsable_button')
+                    .setLabel('Responsable')
+                    .setStyle(ButtonStyle.Primary),
+                new ButtonBuilder()
+                    .setCustomId('hour_button')
+                    .setLabel('Hour')
+                    .setStyle(ButtonStyle.Primary)
+            );
+        
+        await interaction.reply({
+            embeds: [embed],
+            components: [Buttons]
+        });
+    },
+};

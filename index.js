@@ -4,6 +4,7 @@ import fg from 'fast-glob';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { initializeGuild } from './utils/GuildInit.js';
+import { handleButton } from './components/MenuAdmin.js';
 
 dotenv.config();
 
@@ -51,25 +52,36 @@ client.on('guildCreate', async guild => {
     }
 });
 
-// Gérer les interactions slash
+// Gérer les interactions (commandes slash, boutons et select menus)
 client.on('interactionCreate', async interaction => {
-    if (!interaction.isChatInputCommand()) return;
+    // Gérer les commandes slash
+    if (interaction.isChatInputCommand()) {
+        const command = client.commands.get(interaction.commandName);
 
-    const command = client.commands.get(interaction.commandName);
+        if (!command) {
+            console.error(`Aucune commande correspondant à ${interaction.commandName} n'a été trouvée.`);
+            return;
+        }
 
-    if (!command) {
-        console.error(`Aucune commande correspondant à ${interaction.commandName} n'a été trouvée.`);
-        return;
+        try {
+            await command.execute(interaction);
+        } catch (error) {
+            console.error(`Erreur lors de l'exécution de ${interaction.commandName}:`, error);
+            await interaction.reply({ 
+                content: '❌ Il y a eu une erreur lors de l\'exécution de cette commande!', 
+                ephemeral: true 
+            });
+        }
     }
-
-    try {
-        await command.execute(interaction);
-    } catch (error) {
-        console.error(`Erreur lors de l'exécution de ${interaction.commandName}:`, error);
-        await interaction.reply({ 
-            content: '❌ Il y a eu une erreur lors de l\'exécution de cette commande!', 
-            ephemeral: true 
-        });
+    
+    // Gérer les boutons
+    if (interaction.isButton()) {
+        await handleButton(interaction);
+    }
+    
+    // Gérer les select menus (String, User, Role, Channel, Mentionable)
+    if (interaction.isAnySelectMenu()) {
+        await handleButton(interaction);
     }
 });
 
