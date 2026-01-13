@@ -27,6 +27,14 @@ const buttonHandlers = {
         
         await interaction.update({ embeds: [embed], components: [] });
     },
+    parametre_button: async (interaction) => {
+        const embed = new EmbedBuilder()
+            .setTitle('⚙️ Section Paramètre')
+            .setDescription('Gestion des paramètres')
+            .setColor(0x5865F2);
+        
+        await interaction.update({ embeds: [embed], components: [] });
+    },
     back_to_main: async (interaction) => {
         const userName = interaction.user.displayName || interaction.user.username;
         
@@ -52,7 +60,11 @@ const buttonHandlers = {
                 new ButtonBuilder()
                     .setCustomId('hour_button')
                     .setLabel('Hour')
-                    .setStyle(ButtonStyle.Primary)
+                    .setStyle(ButtonStyle.Primary),
+                new ButtonBuilder()
+                    .setCustomId('parametre_button')
+                    .setLabel('Paramètre')
+                    .setStyle(ButtonStyle.Secondary)
             );
         
         await interaction.update({ embeds: [embed], components: [row] });

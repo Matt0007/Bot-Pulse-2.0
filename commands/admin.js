@@ -39,7 +39,11 @@ export default {
                 new ButtonBuilder()
                     .setCustomId('hour_button')
                     .setLabel('Hour')
-                    .setStyle(ButtonStyle.Primary)
+                    .setStyle(ButtonStyle.Primary),
+                new ButtonBuilder()
+                    .setCustomId('parametre_button')
+                    .setLabel('Paramètre')
+                    .setStyle(ButtonStyle.Secondary)
             );
         
         await interaction.reply({
