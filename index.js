@@ -83,6 +83,11 @@ client.on('interactionCreate', async interaction => {
     if (interaction.isAnySelectMenu()) {
         await handleButton(interaction);
     }
+    
+    // Gérer les modals
+    if (interaction.isModalSubmit()) {
+        await handleButton(interaction);
+    }
 });
 
 // Se connecter au serveur Discord

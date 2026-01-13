@@ -1,8 +1,12 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { adminHandlers } from './admin/adminHandlers.js';
+import { parametreHandlers } from './parametre/parametreHandlers.js';
+import { clickupApiModal } from './parametre/clickup.js';
 
 const buttonHandlers = {
     ...adminHandlers,
+    ...parametreHandlers,
+    clickup_api_modal: clickupApiModal,
     projet_button: async (interaction) => {
         const embed = new EmbedBuilder()
             .setTitle('📁 Section Projet')
@@ -23,14 +27,6 @@ const buttonHandlers = {
         const embed = new EmbedBuilder()
             .setTitle('⏰ Section Hour')
             .setDescription('Gestion des heures')
-            .setColor(0x5865F2);
-        
-        await interaction.update({ embeds: [embed], components: [] });
-    },
-    parametre_button: async (interaction) => {
-        const embed = new EmbedBuilder()
-            .setTitle('⚙️ Section Paramètre')
-            .setDescription('Gestion des paramètres')
             .setColor(0x5865F2);
         
         await interaction.update({ embeds: [embed], components: [] });
