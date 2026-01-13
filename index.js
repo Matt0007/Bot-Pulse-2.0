@@ -3,7 +3,7 @@ import { Client, GatewayIntentBits, Collection } from 'discord.js';
 import fg from 'fast-glob';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { initializeGuild } from './utils/guildSetup.js';
+import { initializeGuild } from './utils/GuildInit.js';
 
 dotenv.config();
 
