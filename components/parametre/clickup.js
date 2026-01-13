@@ -1,58 +1,55 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const configPath = path.join(__dirname, '../../config.json');
-
-// Fonction pour charger la config
-function loadConfig() {
-    try {
-        if (fs.existsSync(configPath)) {
-            return JSON.parse(fs.readFileSync(configPath, 'utf8'));
-        }
-    } catch (error) {
-        console.error('Erreur lors du chargement de la config:', error);
-    }
-    return {};
-}
-
-// Fonction pour sauvegarder la config
-function saveConfig(config) {
-    try {
-        fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf8');
-        return true;
-    } catch (error) {
-        console.error('Erreur lors de la sauvegarde de la config:', error);
-        return false;
-    }
-}
+import prisma from '../../utils/prisma.js';
+import { encrypt, decrypt } from '../../utils/encryption.js';
 
 export async function clickupButton(interaction) {
-    const config = loadConfig();
-    const hasApiKey = config.clickupApiKey && config.clickupApiKey.trim() !== '';
-    
-    const embed = new EmbedBuilder()
-        .setTitle('🔑 Clé API ClickUp')
-        .setDescription(hasApiKey 
-            ? '✅ Une clé API est configurée.\nCliquez sur "Modifier" pour la changer.'
-            : '❌ Aucune clé API configurée.\nCliquez sur "Configurer" pour en ajouter une.')
-        .setColor(hasApiKey ? 0x00FF00 : 0xFF0000);
-    
-    const buttons = new ActionRowBuilder()
-        .addComponents(
-            new ButtonBuilder()
-                .setCustomId('clickup_configure_button')
-                .setLabel(hasApiKey ? 'Modifier' : 'Configurer')
-                .setStyle(hasApiKey ? ButtonStyle.Secondary : ButtonStyle.Success),
-            new ButtonBuilder()
-                .setCustomId('parametre_button')
-                .setLabel('Retour')
-                .setStyle(ButtonStyle.Secondary)
-        );
-    
-    await interaction.update({ embeds: [embed], components: [buttons] });
+    try {
+        const guildConfig = await prisma.guildConfig.findUnique({
+            where: { guildId: interaction.guild.id }
+        });
+        
+        // Vérifier si une clé API chiffrée existe
+        let hasApiKey = false;
+        if (guildConfig?.clickupApiKey) {
+            try {
+                // Tenter de déchiffrer pour vérifier que la clé est valide
+                const decrypted = decrypt(guildConfig.clickupApiKey);
+                hasApiKey = decrypted && decrypted.trim() !== '';
+            } catch (error) {
+                console.error('Erreur lors du déchiffrement de la clé API:', error);
+                hasApiKey = false;
+            }
+        }
+        
+        const embed = new EmbedBuilder()
+            .setTitle('🔑 Clé API ClickUp')
+            .setDescription(hasApiKey 
+                ? '✅ Une clé API est configurée.\nCliquez sur "Modifier" pour la changer.'
+                : '❌ Aucune clé API configurée.\nCliquez sur "Configurer" pour en ajouter une.')
+            .setColor(hasApiKey ? 0x00FF00 : 0xFF0000);
+        
+        const buttons = new ActionRowBuilder()
+            .addComponents(
+                new ButtonBuilder()
+                    .setCustomId('clickup_configure_button')
+                    .setLabel(hasApiKey ? 'Modifier' : 'Configurer')
+                    .setStyle(hasApiKey ? ButtonStyle.Secondary : ButtonStyle.Success),
+                new ButtonBuilder()
+                    .setCustomId('parametre_button')
+                    .setLabel('Retour')
+                    .setStyle(ButtonStyle.Secondary)
+            );
+        
+        await interaction.update({ embeds: [embed], components: [buttons] });
+    } catch (error) {
+        console.error('Erreur lors de la récupération de la config:', error);
+        const embed = new EmbedBuilder()
+            .setTitle('❌ Erreur')
+            .setDescription('Impossible de charger la configuration.')
+            .setColor(0xFF0000);
+        
+        await interaction.update({ embeds: [embed], components: [] });
+    }
 }
 
 export async function clickupConfigure(interaction) {
@@ -74,15 +71,28 @@ export async function clickupConfigure(interaction) {
 }
 
 export async function clickupApiModal(interaction) {
-    const apiKey = interaction.fields.getTextInputValue('clickup_api_key');
-    
-    const config = loadConfig();
-    config.clickupApiKey = apiKey.trim();
-    
-    if (saveConfig(config)) {
+    try {
+        const apiKey = interaction.fields.getTextInputValue('clickup_api_key');
+        
+        // Chiffrer la clé API avant de la stocker
+        const encryptedApiKey = encrypt(apiKey.trim());
+        
+        if (!encryptedApiKey) {
+            throw new Error('Impossible de chiffrer la clé API');
+        }
+        
+        await prisma.guildConfig.upsert({
+            where: { guildId: interaction.guild.id },
+            update: { clickupApiKey: encryptedApiKey },
+            create: { 
+                guildId: interaction.guild.id,
+                clickupApiKey: encryptedApiKey
+            }
+        });
+        
         const embed = new EmbedBuilder()
             .setTitle('✅ Clé API ClickUp configurée')
-            .setDescription('La clé API ClickUp a été enregistrée avec succès.')
+            .setDescription('La clé API ClickUp a été enregistrée et chiffrée avec succès.')
             .setColor(0x00FF00);
         
         const backButton = new ActionRowBuilder()
@@ -94,7 +104,8 @@ export async function clickupApiModal(interaction) {
             );
         
         await interaction.reply({ embeds: [embed], components: [backButton], ephemeral: true });
-    } else {
+    } catch (error) {
+        console.error('Erreur lors de la sauvegarde de la clé API:', error);
         const embed = new EmbedBuilder()
             .setTitle('❌ Erreur')
             .setDescription('Impossible de sauvegarder la clé API.')
