@@ -103,7 +103,7 @@ export async function clickupApiModal(interaction) {
                     .setStyle(ButtonStyle.Secondary)
             );
         
-        await interaction.reply({ embeds: [embed], components: [backButton], ephemeral: true });
+        await interaction.reply({ embeds: [embed], components: [backButton] });
     } catch (error) {
         console.error('Erreur lors de la sauvegarde de la clé API:', error);
         const embed = new EmbedBuilder()
@@ -111,6 +111,6 @@ export async function clickupApiModal(interaction) {
             .setDescription('Impossible de sauvegarder la clé API.')
             .setColor(0xFF0000);
         
-        await interaction.reply({ embeds: [embed], ephemeral: true });
+        await interaction.reply({ embeds: [embed] });
     }
 }
