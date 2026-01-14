@@ -32,3 +32,31 @@ model GuildProject {
   @@unique([guildId, projectId])
   @@map("guild_projects")
 }
+
+// Responsables ClickUp avec channels Discord
+model GuildResponsable {
+  id             String   @id @default(cuid())
+  guildId        String
+  responsableName String
+  channelId      String   @unique
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  users          GuildResponsableUser[]
+
+  @@unique([guildId, responsableName])
+  @@map("guild_responsables")
+}
+
+// Relation many-to-many entre responsables et utilisateurs Discord
+model GuildResponsableUser {
+  id            String   @id @default(cuid())
+  responsableId String
+  userId        String
+  createdAt     DateTime @default(now())
+
+  responsable   GuildResponsable @relation(fields: [responsableId], references: [id], onDelete: Cascade)
+
+  @@unique([responsableId, userId])
+  @@map("guild_responsable_users")
+}
