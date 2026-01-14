@@ -1,0 +1,51 @@
+import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+
+export async function helpButton(interaction) {
+    const embed = new EmbedBuilder()
+        .setTitle('📚 Guide d\'utilisation - Panneau Admin')
+        .setDescription('Voici toutes les fonctionnalités disponibles dans le panneau d\'administration :')
+        .setColor(0x5865F2)
+        .addFields(
+            {
+                name: '🔧 Section Admin',
+                value: '**Liste** : Affiche tous les administrateurs ayant le rôle "Bot Pulse Admin"\n**Ajouter** : Ajoute un utilisateur au rôle administrateur\n**Retirer** : Retire le rôle administrateur d\'un utilisateur',
+                inline: false
+            },
+            {
+                name: '📁 Section Projet',
+                value: '**Liste** : Affiche tous les projets ClickUp configurés\n**Ajouter** : Ajoute un projet depuis votre espace ClickUp\n**Retirer** : Supprime un projet de la configuration',
+                inline: false
+            },
+            {
+                name: '👤 Section Responsable',
+                value: '**Liste** : Affiche tous les responsables configurés avec leurs channels et utilisateurs\n**Ajouter** : Crée un nouveau responsable avec un projet ClickUp, un channel dédié et des utilisateurs\n**Retirer** : Supprime un responsable et son channel associé',
+                inline: false
+            },
+            {
+                name: '⏰ Section Heure',
+                value: 'Fonctionnalité à venir...',
+                inline: false
+            },
+            {
+                name: '⚙️ Section Paramètre',
+                value: '**ClickUp API** : Configure ou modifie votre clé API ClickUp\n**Help** : Affiche ce guide d\'utilisation',
+                inline: false
+            },
+            {
+                name: 'ℹ️ Informations importantes',
+                value: '• Toutes les commandes doivent être utilisées dans le channel `bot-pulse-admin`\n• Seuls les utilisateurs avec le rôle "Bot Pulse Admin" peuvent utiliser ces fonctionnalités\n• La clé API ClickUp est chiffrée et stockée de manière sécurisée',
+                inline: false
+            }
+        )
+        .setFooter({ text: 'Besoin d\'aide ? Contactez un administrateur du serveur.' });
+
+    const backButton = new ActionRowBuilder()
+        .addComponents(
+            new ButtonBuilder()
+                .setCustomId('parametre_button')
+                .setLabel('Retour')
+                .setStyle(ButtonStyle.Secondary)
+        );
+
+    await interaction.update({ embeds: [embed], components: [backButton] });
+}

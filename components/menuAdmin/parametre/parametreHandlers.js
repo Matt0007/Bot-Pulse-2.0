@@ -1,5 +1,6 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { clickupButton, clickupConfigure, clickupResetConfirm, clickupResetCancel } from './clickup.js';
+import { helpButton } from './help.js';
 
 export const parametreHandlers = {
     parametre_button: async (interaction) => {
@@ -15,6 +16,10 @@ export const parametreHandlers = {
                     .setLabel('ClickUp API')
                     .setStyle(ButtonStyle.Primary),
                 new ButtonBuilder()
+                    .setCustomId('help_button')
+                    .setLabel('Help')
+                    .setStyle(ButtonStyle.Primary),
+                new ButtonBuilder()
                     .setCustomId('back_to_main')
                     .setLabel('Retour')
                     .setStyle(ButtonStyle.Secondary)
@@ -25,5 +30,6 @@ export const parametreHandlers = {
     clickup_button: clickupButton,
     clickup_configure_button: clickupConfigure,
     clickup_reset_confirm: clickupResetConfirm,
-    clickup_reset_cancel: clickupResetCancel
+    clickup_reset_cancel: clickupResetCancel,
+    help_button: helpButton
 };
