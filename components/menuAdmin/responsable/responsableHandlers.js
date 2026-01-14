@@ -1,4 +1,5 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+import { responsableList } from './List.js';
 
 export const responsableHandlers = {
     responsable_button: async (interaction) => {
@@ -10,6 +11,10 @@ export const responsableHandlers = {
         const buttons = new ActionRowBuilder()
             .addComponents(
                 new ButtonBuilder()
+                    .setCustomId('responsable_list_button')
+                    .setLabel('Liste')
+                    .setStyle(ButtonStyle.Primary),
+                new ButtonBuilder()
                     .setCustomId('back_to_main')
                     .setLabel('Retour')
                     .setStyle(ButtonStyle.Secondary)
@@ -17,4 +22,5 @@ export const responsableHandlers = {
         
         await interaction.update({ embeds: [embed], components: [buttons] });
     },
+    responsable_list_button: responsableList,
 };
