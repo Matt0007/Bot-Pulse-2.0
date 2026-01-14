@@ -1,5 +1,5 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
-import { clickupButton, clickupConfigure } from './clickup.js';
+import { clickupButton, clickupConfigure, clickupResetConfirm, clickupResetCancel } from './clickup.js';
 
 export const parametreHandlers = {
     parametre_button: async (interaction) => {
@@ -23,5 +23,7 @@ export const parametreHandlers = {
         await interaction.update({ embeds: [embed], components: [buttons] });
     },
     clickup_button: clickupButton,
-    clickup_configure_button: clickupConfigure
+    clickup_configure_button: clickupConfigure,
+    clickup_reset_confirm: clickupResetConfirm,
+    clickup_reset_cancel: clickupResetCancel
 };
