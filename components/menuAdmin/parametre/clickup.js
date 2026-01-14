@@ -98,7 +98,7 @@ export async function clickupApiModal(interaction) {
         const backButton = new ActionRowBuilder()
             .addComponents(
                 new ButtonBuilder()
-                    .setCustomId('clickup_button')
+                    .setCustomId('parametre_button')
                     .setLabel('Retour')
                     .setStyle(ButtonStyle.Secondary)
             );
