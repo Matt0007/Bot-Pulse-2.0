@@ -1,6 +1,6 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder } from 'discord.js';
-import { useGetAllProject } from '../../hook/clickup/useGetAllProject.js';
-import prisma from '../../utils/prisma.js';
+import { useGetAllProject } from '../../../hook/clickup/useGetAllProject.js';
+import prisma from '../../../utils/prisma.js';
 
 export async function projetAdd(interaction) {
     try {

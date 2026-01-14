@@ -1,6 +1,6 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
-import prisma from '../../utils/prisma.js';
-import { encrypt, decrypt } from '../../utils/encryption.js';
+import prisma from '../../../utils/prisma.js';
+import { encrypt, decrypt } from '../../../utils/encryption.js';
 
 export async function clickupButton(interaction) {
     try {

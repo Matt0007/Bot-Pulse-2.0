@@ -4,7 +4,7 @@ import fg from 'fast-glob';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { initializeGuild } from './utils/GuildInit.js';
-import { handleButton } from './components/MenuAdmin.js';
+import { handleButton } from './components/menuAdmin/menuAdminHandlers.js';
 
 dotenv.config();
 

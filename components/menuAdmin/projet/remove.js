@@ -1,5 +1,5 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder } from 'discord.js';
-import prisma from '../../utils/prisma.js';
+import prisma from '../../../utils/prisma.js';
 
 export async function projetRemove(interaction) {
     try {

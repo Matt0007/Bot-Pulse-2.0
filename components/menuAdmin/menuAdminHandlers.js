@@ -4,7 +4,7 @@ import { projetHandlers } from './projet/projetHandlers.js';
 import { responsableHandlers } from './responsable/responsableHandlers.js';
 import { hourHandlers } from './hour/hourHandlers.js';
 import { clickupApiModal } from './parametre/clickup.js';
-import { AdminMenuButton } from '../commands/admin.js';
+import { AdminMenuButton } from '../../commands/admin.js';
 
 const buttonHandlers = {
     ...adminHandlers,
