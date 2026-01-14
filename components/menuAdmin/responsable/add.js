@@ -32,29 +32,19 @@ export async function responsableAdd(interaction) {
             where: { guildId: interaction.guild.id }
         });
         const dbResponsableNames = new Set(dbResponsables.map(r => r.responsableName));
-        const availableResponsables = responsables.filter(r => !dbResponsableNames.has(r));
         
-        if (!availableResponsables.length) {
-            const embed = new EmbedBuilder()
-                .setTitle('✅ Tous les responsables ajoutés')
-                .setDescription('Tous les responsables ClickUp sont déjà configurés.')
-                .setColor(0xFFA500);
-            await interaction.update({ embeds: [embed], components: [createBackButton()] });
-            return;
-        }
-        
+        // Afficher tous les responsables
         const selectMenu = new StringSelectMenuBuilder()
             .setCustomId('responsable_add_select_clickup')
             .setPlaceholder('Sélectionnez un responsable ClickUp')
-            .addOptions(availableResponsables.slice(0, 25).map(r => ({
+            .addOptions(responsables.slice(0, 25).map(r => ({
                 label: r.length > 100 ? r.substring(0, 97) + '...' : r,
-                value: r,
-                description: 'Responsable ClickUp'
+                value: r
             })));
         
         const embed = new EmbedBuilder()
             .setTitle('➕ Ajouter un responsable')
-            .setDescription('**Étape 1/2** : Sélectionnez un responsable ClickUp dans le menu ci-dessous')
+            .setDescription('**Étape 1/2** : Sélectionnez un responsable ClickUp dans le menu ci-dessous\n\n*Vous pouvez ajouter des utilisateurs à un channel existant ou créer un nouveau channel.*')
             .setColor(0x5865F2);
         
         await interaction.update({ 
@@ -130,16 +120,35 @@ export async function responsableAddSelectUsers(interaction) {
         const usersList = validMembers.map(m => `• ${m.displayName || m.user.username}`).join('\n');
         const channelName = `responsable-${tempData.responsableName.toLowerCase().replace(/\s+/g, '-')}`;
         
+        // Vérifier si le responsable existe déjà
+        const existing = await prisma.guildResponsable.findUnique({
+            where: {
+                guildId_responsableName: {
+                    guildId: interaction.guild.id,
+                    responsableName: tempData.responsableName
+                }
+            },
+            include: { users: true }
+        });
+        
         const embed = new EmbedBuilder()
             .setTitle('📋 Récapitulatif')
             .setDescription('Vérifiez les informations avant de valider')
             .addFields(
                 { name: 'Responsable ClickUp', value: tempData.responsableName, inline: false },
                 { name: `Utilisateurs Discord (${validMembers.length})`, value: usersList || 'Aucun', inline: false },
-                { name: 'Channel à créer', value: channelName, inline: false }
+                { 
+                    name: existing ? 'Channel existant' : 'Channel à créer', 
+                    value: existing ? `<#${existing.channelId}>` : channelName, 
+                    inline: false 
+                }
             )
             .setColor(0x5865F2)
-            .setFooter({ text: 'Cliquez sur "Valider" pour créer le channel et sauvegarder' });
+            .setFooter({ 
+                text: existing 
+                    ? 'Cliquez sur "Valider" pour ajouter les utilisateurs au channel existant' 
+                    : 'Cliquez sur "Valider" pour créer le channel et sauvegarder' 
+            });
         
         const buttons = new ActionRowBuilder().addComponents(
             new ButtonBuilder().setCustomId('responsable_add_validate').setLabel('✅ Valider').setStyle(ButtonStyle.Success),
@@ -173,19 +182,81 @@ export async function responsableAddValidate(interaction) {
                     guildId: interaction.guild.id,
                     responsableName
                 }
-            }
+            },
+            include: { users: true }
         });
         
+        let channel;
+        let isNewChannel = false;
+        
         if (existing) {
-            const embed = new EmbedBuilder()
-                .setTitle('⚠️ Déjà ajouté')
-                .setDescription(`Le responsable "${responsableName}" est déjà configuré.`)
-                .setColor(0xFFA500);
-            await interaction.update({ embeds: [embed], components: [createBackButton()] });
+            // Ajouter des utilisateurs à un channel existant
+            channel = await interaction.guild.channels.fetch(existing.channelId);
+            if (!channel) {
+                await handleError(interaction, 'Le channel associé n\'existe plus.');
+                tempSelections.delete(userId);
+                return;
+            }
+            
+            // Filtrer les utilisateurs qui ne sont pas déjà dans le channel
+            const existingUserIds = new Set(existing.users.map(u => u.userId));
+            const newUserIds = userIds.filter(id => !existingUserIds.has(id));
+            
+            if (newUserIds.length === 0) {
+                const embed = new EmbedBuilder()
+                    .setTitle('⚠️ Utilisateurs déjà ajoutés')
+                    .setDescription('Tous les utilisateurs sélectionnés sont déjà dans ce channel.')
+                    .setColor(0xFFA500);
+                await interaction.update({ embeds: [embed], components: [createBackButton()] });
+                tempSelections.delete(userId);
+                return;
+            }
+            
+            // Ajouter les permissions pour les nouveaux utilisateurs
+            for (const newUserId of newUserIds) {
+                await channel.permissionOverwrites.edit(newUserId, {
+                    ViewChannel: true,
+                    SendMessages: true,
+                    ReadMessageHistory: true
+                });
+            }
+            
+            // Ajouter les nouveaux utilisateurs à la base de données
+            await prisma.guildResponsableUser.createMany({
+                data: newUserIds.map(userId => ({
+                    responsableId: existing.id,
+                    userId
+                })),
+                skipDuplicates: true
+            });
+            
+            const members = await Promise.all(newUserIds.map(id => interaction.guild.members.fetch(id)));
+            const mentions = members.map(m => `<@${m.id}>`).join(' ');
+            
+            // Envoyer un message de bienvenue dans le channel
+            const welcomeEmbed = new EmbedBuilder()
+                .setTitle('👋 Bienvenue !')
+                .setDescription(`${mentions}\n\nVous avez été ajouté(e)(s) au channel du responsable **${responsableName}**.`)
+                .setColor(0x5865F2);
+            await channel.send({ embeds: [welcomeEmbed] });
+            
             tempSelections.delete(userId);
+            const usersList = members.map(m => `• ${m.displayName || m.user.username}`).join('\n');
+            
+            const embed = new EmbedBuilder()
+                .setTitle('✅ Utilisateurs ajoutés')
+                .setDescription(`**${newUserIds.length}** utilisateur(s) ajouté(s) au channel du responsable **${responsableName}**.`)
+                .addFields(
+                    { name: 'Channel', value: `<#${channel.id}>`, inline: false },
+                    { name: `Nouveaux utilisateurs (${members.length})`, value: usersList, inline: false }
+                )
+                .setColor(0x00FF00);
+            
+            await interaction.update({ embeds: [embed], components: [createBackButton()] });
             return;
         }
         
+        // Créer un nouveau channel ou utiliser un existant
         let category = interaction.guild.channels.cache.find(
             c => c.type === ChannelType.GuildCategory && c.name.toLowerCase() === 'responsable'
         );
@@ -198,12 +269,30 @@ export async function responsableAddValidate(interaction) {
         }
         
         const channelName = `responsable-${responsableName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`;
-        const channel = await interaction.guild.channels.create({
-            name: channelName,
-            type: ChannelType.GuildText,
-            parent: category.id,
-            reason: `Création du channel pour le responsable ${responsableName} par ${interaction.user.tag}`
-        });
+        const existingChannel = interaction.guild.channels.cache.find(
+            c => c.type === ChannelType.GuildText && c.name.toLowerCase() === channelName.toLowerCase()
+        );
+        
+        if (existingChannel) {
+            const channelInDb = await prisma.guildResponsable.findUnique({ where: { channelId: existingChannel.id } });
+            if (channelInDb) {
+                const embed = new EmbedBuilder()
+                    .setTitle('⚠️ Channel déjà utilisé')
+                    .setDescription(`Le channel <#${existingChannel.id}> est déjà associé à un autre responsable.`)
+                    .setColor(0xFFA500);
+                await interaction.update({ embeds: [embed], components: [createBackButton()] });
+                tempSelections.delete(userId);
+                return;
+            }
+            channel = existingChannel;
+        } else {
+            channel = await interaction.guild.channels.create({
+                name: channelName,
+                type: ChannelType.GuildText,
+                parent: category.id,
+                reason: `Création du channel pour le responsable ${responsableName} par ${interaction.user.tag}`
+            });
+        }
         
         await channel.permissionOverwrites.edit(interaction.guild.roles.everyone, { ViewChannel: false });
         for (const userId of userIds) {
@@ -223,16 +312,24 @@ export async function responsableAddValidate(interaction) {
             }
         });
         
-        tempSelections.delete(userId);
-        
         const members = await Promise.all(userIds.map(id => interaction.guild.members.fetch(id)));
+        const mentions = members.map(m => `<@${m.id}>`).join(' ');
+        
+        // Envoyer un message de bienvenue dans le channel
+        const welcomeEmbed = new EmbedBuilder()
+            .setTitle('👋 Bienvenue !')
+            .setDescription(`${mentions}\n\nVous avez été ajouté(e)(s) au channel du responsable **${responsableName}**.`)
+            .setColor(0x5865F2);
+        await channel.send({ embeds: [welcomeEmbed] });
+        
+        tempSelections.delete(userId);
         const usersList = members.map(m => `• ${m.displayName || m.user.username}`).join('\n');
         
         const embed = new EmbedBuilder()
             .setTitle('✅ Responsable ajouté')
             .setDescription(`Le responsable **${responsableName}** a été configuré avec succès.`)
             .addFields(
-                { name: 'Channel créé', value: `<#${channel.id}>`, inline: false },
+                { name: existingChannel ? 'Channel utilisé' : 'Channel créé', value: `<#${channel.id}>`, inline: false },
                 { name: `Utilisateurs (${members.length})`, value: usersList, inline: false }
             )
             .setColor(0x00FF00);
