@@ -10,6 +10,7 @@ import { handleTacheSelect, handleTacheStatusChange } from './components/tache/l
 import { tacheAddModal, tacheAddConfirm, tacheAddCancel, tacheAddModifyModal, tacheAddParamsSelect, tacheAddDateModal, tacheAddPrioritySelect, tacheAddPriorityBack, tacheAddCategorySelect, tacheAddCategoryBack, tacheAddLocationProjectSelect, tacheAddLocationListSelect, tacheAddLocationBack } from './components/tache/add.js';
 import { handleCompletedTasksPagination } from './scheduler/completedTasks.js';
 import { startCompletedTasksScheduler } from './scheduler/completedTasks.js';
+import { startMorningTasksScheduler, handleMorningTasksPagination } from './scheduler/morningTasks.js';
 
 dotenv.config();
 
@@ -46,8 +47,9 @@ client.once('ready', () => {
     console.log(`✅ Bot connecté en tant que ${client.user.tag}!`);
     console.log(`📋 ${client.commands.size} commande(s) chargée(s)`);
     
-    // Démarrer le scheduler des tâches complétées
+    // Démarrer les schedulers
     startCompletedTasksScheduler(client);
+    startMorningTasksScheduler(client);
 });
 
 // Quand le bot rejoint un nouveau serveur
@@ -86,7 +88,12 @@ client.on('interactionCreate', async interaction => {
     if (interaction.isButton()) {
         // Vérifier si c'est une interaction de pagination des tâches
         if (interaction.customId === 'tache-list-page-prev' || interaction.customId === 'tache-list-page-next') {
-            await handleTachePagination(interaction);
+            // Vérifier si c'est un message du scheduler matinal (via le titre de l'embed)
+            if (interaction.message.embeds[0]?.title?.startsWith('🌅 Bonjour')) {
+                await handleMorningTasksPagination(interaction);
+            } else {
+                await handleTachePagination(interaction);
+            }
         } else if (interaction.customId === 'completed-tasks-page-prev' || interaction.customId === 'completed-tasks-page-next') {
             // Pagination des tâches complétées
             await handleCompletedTasksPagination(interaction);
