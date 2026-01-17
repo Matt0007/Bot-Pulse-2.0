@@ -28,9 +28,9 @@ export async function handleTacheSelect(interaction) {
 
         const statutEmoji = selectedTask.statut === 'En cours' ? '🟦' : selectedTask.statut === 'Achevée' ? '✅' : '⬜';
         const buttons = new ActionRowBuilder().addComponents(
-            new ButtonBuilder().setCustomId(`tache-status-${selectedIndex}-a-faire`).setLabel('À faire').setStyle(ButtonStyle.Secondary).setEmoji('⬜').setDisabled(selectedTask.statut === 'À faire'),
-            new ButtonBuilder().setCustomId(`tache-status-${selectedIndex}-en-cours`).setLabel('En cours').setStyle(ButtonStyle.Primary).setEmoji('🟦').setDisabled(selectedTask.statut === 'En cours'),
-            new ButtonBuilder().setCustomId(`tache-status-${selectedIndex}-acheve`).setLabel('Achevée').setStyle(ButtonStyle.Success).setEmoji('✅').setDisabled(false)
+            new ButtonBuilder().setCustomId(`tache-status-${selectedIndex}-a-faire`).setLabel('À faire').setStyle(ButtonStyle.Secondary).setDisabled(selectedTask.statut === 'À faire'),
+            new ButtonBuilder().setCustomId(`tache-status-${selectedIndex}-en-cours`).setLabel('En cours').setStyle(ButtonStyle.Primary).setDisabled(selectedTask.statut === 'En cours'),
+            new ButtonBuilder().setCustomId(`tache-status-${selectedIndex}-acheve`).setLabel('Achevée').setStyle(ButtonStyle.Success).setDisabled(false)
         );
 
         await interaction.reply({
