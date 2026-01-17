@@ -1,12 +1,8 @@
 import { EmbedBuilder } from 'discord.js';
 import prisma from '../../utils/prisma.js';
 import { useGetAllTask } from '../../hook/clickup/useGetAllTask.js';
-
-// Emojis de statut
-const STATUS_EMOJIS = {
-    A_FAIRE: '⬜',    // Rond blanc
-    EN_COURS: '🟦'   // Rond bleu
-};
+import { createTaskList, createTaskPaginationComponents, createFooterText } from './liste/pagination.js';
+import { tasksCache } from './liste/cache.js';
 
 // Couleurs des embeds Discord
 const EMBED_COLORS = {
@@ -83,40 +79,42 @@ export async function tacheList(interaction) {
             });
         }
 
-        // Créer la liste des tâches (limité à 25 pour l'embed Discord)
-        const maxTasks = 25;
-        const tasksToShow = tasks.slice(0, maxTasks);
+        // Stocker les tâches dans le cache pour les interactions (avec pagination)
+        const currentPage = 0;
+        tasksCache.set(interaction.user.id, {
+            tasks: tasks,
+            timestamp: Date.now(),
+            currentPage: currentPage,
+            responsableName: responsable.responsableName,
+            guildId: interaction.guild.id
+        });
+
+        // Créer la liste des tâches de la page actuelle
+        const tasksList = createTaskList(tasks, currentPage);
         
-        let taskNumber = 0;
-        const tasksList = tasksToShow.map((task) => {
-            const statutEmoji = task.statut === 'En cours' ? STATUS_EMOJIS.EN_COURS : STATUS_EMOJIS.A_FAIRE;
-            
-            // Numéroter toutes les tâches (principales et sous-tâches)
-            taskNumber++;
-            const numberStr = taskNumber.toString().padStart(2, '0');
-            
-            if (task.isSubtask) {
-                // Sous-tâche : numéro avant emoji, puis "-"
-                return `${numberStr}. ${statutEmoji} - ${task.nom}`;
-            } else {
-                // Tâche principale : numéro avant emoji, nom en gras
-                return `${numberStr}. ${statutEmoji} **${task.nom}**`;
-            }
-        }).join('\n');
+        // Créer les composants (boutons de pagination)
+        const { components, totalPages } = createTaskPaginationComponents(tasks, currentPage);
+        
+        // Créer le footer
+        const footerText = createFooterText(tasks, totalPages, currentPage);
 
         // Créer l'embed
         const embed = new EmbedBuilder()
             .setTitle(`📋 Tâches de ${responsable.responsableName}`)
             .setDescription(tasksList)
-            .setFooter({ 
-                text: tasks.length > maxTasks 
-                    ? `Affichage de ${maxTasks} tâches sur ${tasks.length} total` 
-                    : `Total: ${tasks.length} tâche(s)` 
-            })
+            .setFooter({ text: footerText })
             .setColor(EMBED_COLORS.TASK);
 
-        await interaction.editReply({
+        const message = await interaction.editReply({
             embeds: [embed],
+            components: components.length > 0 ? components : undefined
+        });
+
+        // Stocker l'ID du message dans le cache pour pouvoir le mettre à jour plus tard
+        tasksCache.set(interaction.user.id, {
+            ...tasksCache.get(interaction.user.id),
+            listMessageId: message.id,
+            listChannelId: interaction.channel.id
         });
 
     } catch (error) {

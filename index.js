@@ -5,6 +5,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { initializeGuild } from './utils/GuildInit.js';
 import { handleButton } from './components/menuAdmin/menuAdminHandlers.js';
+import { handleTachePagination } from './components/tache/liste/pagination.js';
+import { handleTacheSelect, handleTacheStatusChange } from './components/tache/liste/index.js';
 
 dotenv.config();
 
@@ -76,12 +78,25 @@ client.on('interactionCreate', async interaction => {
     
     // Gérer les boutons
     if (interaction.isButton()) {
-        await handleButton(interaction);
+        // Vérifier si c'est une interaction de pagination des tâches
+        if (interaction.customId === 'tache-list-page-prev' || interaction.customId === 'tache-list-page-next') {
+            await handleTachePagination(interaction);
+        } else if (interaction.customId.startsWith('tache-status-')) {
+            // Interaction de changement de statut
+            await handleTacheStatusChange(interaction);
+        } else {
+            await handleButton(interaction);
+        }
     }
     
     // Gérer les select menus (String, User, Role, Channel, Mentionable)
     if (interaction.isAnySelectMenu()) {
-        await handleButton(interaction);
+        // Vérifier si c'est une interaction de sélection de tâche
+        if (interaction.customId === 'tache-list-select') {
+            await handleTacheSelect(interaction);
+        } else {
+            await handleButton(interaction);
+        }
     }
     
     // Gérer les modals
