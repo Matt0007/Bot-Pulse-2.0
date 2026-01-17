@@ -1,6 +1,7 @@
 import { SlashCommandBuilder } from 'discord.js';
 import { tacheList } from '../components/tache/List.js';
 import { tacheAdd } from '../components/tache/add.js';
+import { tacheCompleted } from '../scheduler/completedTasks.js';
 
 export default {
     data: new SlashCommandBuilder()
@@ -15,6 +16,11 @@ export default {
             subcommand
                 .setName('add')
                 .setDescription('Ajouter une nouvelle tâche')
+        )
+        .addSubcommand(subcommand =>
+            subcommand
+                .setName('completed')
+                .setDescription('Affiche les tâches complétées aujourd\'hui du responsable du channel')
         ),
     
     async execute(interaction) {
@@ -24,6 +30,8 @@ export default {
             await tacheList(interaction);
         } else if (subcommand === 'add') {
             await tacheAdd(interaction);
+        } else if (subcommand === 'completed') {
+            await tacheCompleted(interaction);
         } else {
             await interaction.reply({
                 content: '❌ Sous-commande inconnue.',
