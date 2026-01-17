@@ -23,12 +23,12 @@ export async function helpButton(interaction) {
             },
             {
                 name: '⏰ Section Heure',
-                value: 'Fonctionnalité à venir...',
+                value: '**Matin** : Configure l\'heure d\'envoi des tâches du matin (par défaut 8h)\n**Complété** : Configure l\'heure d\'envoi des tâches complétées (par défaut 22h)',
                 inline: false
             },
             {
                 name: '⚙️ Section Paramètre',
-                value: '**ClickUp API** : Configure ou modifie votre clé API ClickUp\n**Help** : Affiche ce guide d\'utilisation',
+                value: '**ClickUp API** : Configure ou modifie votre clé API ClickUp\n**Liste d\'ajout** : Sélectionne la liste ClickUp par défaut pour l\'ajout de nouvelles tâches\n**Historique** : Consulte l\'historique des actions administratives\n**Help** : Affiche ce guide d\'utilisation',
                 inline: false
             },
             {

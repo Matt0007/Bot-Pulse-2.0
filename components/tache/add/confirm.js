@@ -1,6 +1,5 @@
 import { EmbedBuilder } from 'discord.js';
 import prisma from '../../../utils/prisma.js';
-import { logAdminAction } from '../../../utils/history.js';
 import { useAddTask } from '../../../hook/clickup/useAddTask.js';
 import { taskDataCache, buildRecapDescription } from '../add.js';
 
@@ -58,11 +57,6 @@ export async function tacheAddConfirm(interaction) {
             taskData.category,
             taskData.priority
         );
-        
-        // Enregistrer dans l'historique admin
-        const userName = interaction.user.displayName || interaction.user.username;
-        const responsableInfo = taskData.responsableName ? ` (Responsable: ${taskData.responsableName})` : '';
-        await logAdminAction(guildId, interaction.user.id, userName, `Ajouter tâche "${taskData.taskName}" dans ${listName} (${projectName})${responsableInfo}`);
         
         // Récupérer le responsable pour la description
         const responsable = await prisma.guildResponsable.findUnique({

@@ -31,8 +31,7 @@ export async function projetRemove(interaction) {
         // Créer le select menu (max 25 options)
         const selectOptions = dbProjects.slice(0, 25).map(project => ({
             label: project.projectName.length > 100 ? project.projectName.substring(0, 97) + '...' : project.projectName,
-            value: project.id,
-            description: `ID: ${project.projectId}`
+            value: project.id
         }));
         
         const selectMenu = new StringSelectMenuBuilder()

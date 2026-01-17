@@ -57,8 +57,7 @@ export async function projetAdd(interaction) {
         // Créer le select menu (max 25 options)
         const selectOptions = availableProjects.slice(0, 25).map(project => ({
             label: project.name.length > 100 ? project.name.substring(0, 97) + '...' : project.name,
-            value: project.id,
-            description: `ID: ${project.id}`
+            value: project.id
         }));
         
         const selectMenu = new StringSelectMenuBuilder()

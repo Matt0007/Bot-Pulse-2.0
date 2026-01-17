@@ -55,8 +55,7 @@ function createEmbed(responsableName, tasksList, footerText) {
         .setTitle(`✅ Tâches complétées de ${responsableName} le ${formatDate()}`)
         .setDescription(tasksList)
         .setFooter({ text: footerText })
-        .setColor(0x00FF00)
-        .setTimestamp();
+        .setColor(0x00FF00);
 }
 
 async function sendCompletedTasks(client, guildId, responsableName, channelId, configuredProjectIds) {
