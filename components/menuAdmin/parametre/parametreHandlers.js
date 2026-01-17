@@ -2,6 +2,7 @@ import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'disc
 import { clickupButton, clickupConfigure, clickupResetConfirm, clickupResetCancel } from './clickup.js';
 import { helpButton } from './help.js';
 import { historyButton } from './history.js';
+import { listSelectionButton, listSelectionModify, listSelectionProjectSelect, listSelectionListSelect } from './listSelection.js';
 
 export const parametreHandlers = {
     parametre_button: async (interaction) => {
@@ -15,6 +16,10 @@ export const parametreHandlers = {
                 new ButtonBuilder()
                     .setCustomId('clickup_button')
                     .setLabel('ClickUp API')
+                    .setStyle(ButtonStyle.Primary),
+                new ButtonBuilder()
+                    .setCustomId('list_selection_button')
+                    .setLabel('Liste d\'ajout')
                     .setStyle(ButtonStyle.Primary),
                 new ButtonBuilder()
                     .setCustomId('history_button')
@@ -36,6 +41,10 @@ export const parametreHandlers = {
     clickup_configure_button: clickupConfigure,
     clickup_reset_confirm: clickupResetConfirm,
     clickup_reset_cancel: clickupResetCancel,
+    list_selection_button: listSelectionButton,
+    list_selection_modify: listSelectionModify,
+    list_selection_project_select: listSelectionProjectSelect,
+    list_selection_list_select: listSelectionListSelect,
     history_button: historyButton,
     help_button: helpButton
 };

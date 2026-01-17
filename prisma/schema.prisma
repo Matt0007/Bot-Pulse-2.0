@@ -11,11 +11,15 @@ datasource db {
 
 // Configuration par serveur (guild)
 model GuildConfig {
-  id            String   @id @default(cuid())
-  guildId       String   @unique
-  clickupApiKey String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                String   @id @default(cuid())
+  guildId           String   @unique
+  clickupApiKey     String?
+  selectedListId    String?
+  selectedListName  String?
+  selectedProjectId String?
+  selectedProjectName String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   @@map("guild_configs")
 }
