@@ -75,7 +75,8 @@ export async function responsableAddSelectClickUp(interaction) {
             .setCustomId('responsable_add_select_users')
             .setPlaceholder('Sélectionnez les utilisateurs Discord (multiple)')
             .setMaxValues(25)
-            .setMinValues(1);
+            .setMinValues(1)
+            .setDisabled(true); // Désactiver temporairement
         
         const embed = new EmbedBuilder()
             .setTitle('➕ Ajouter un responsable')
@@ -88,10 +89,30 @@ export async function responsableAddSelectClickUp(interaction) {
             new ButtonBuilder().setCustomId('responsable_add_cancel').setLabel('Annuler').setStyle(ButtonStyle.Danger)
         );
         
-        await interaction.update({ 
+        const message = await interaction.update({ 
             embeds: [embed], 
-            components: [new ActionRowBuilder().addComponents(userSelect), buttons] 
+            components: [new ActionRowBuilder().addComponents(userSelect), buttons],
+            fetchReply: true
         });
+        
+        // Réactiver le select menu après un court délai
+        setTimeout(async () => {
+            try {
+                const enabledSelect = new UserSelectMenuBuilder()
+                    .setCustomId('responsable_add_select_users')
+                    .setPlaceholder('Sélectionnez les utilisateurs Discord (multiple)')
+                    .setMaxValues(25)
+                    .setMinValues(1)
+                    .setDisabled(false);
+                
+                await message.edit({ 
+                    embeds: [embed], 
+                    components: [new ActionRowBuilder().addComponents(enabledSelect), buttons] 
+                });
+            } catch (error) {
+                console.error('Erreur lors de la réactivation du select menu:', error);
+            }
+        }, 50);
     } catch (error) {
         console.error('Erreur lors de la sélection du responsable:', error);
         await handleError(interaction, 'Impossible de traiter la sélection.');

@@ -41,7 +41,8 @@ export async function adminRemove(interaction) {
         .setCustomId('admin_remove_user_select')
         .setPlaceholder('Sélectionnez un administrateur à retirer')
         .setMaxValues(1)
-        .setMinValues(1);
+        .setMinValues(1)
+        .setDisabled(true); // Désactiver temporairement
     
     const embed = new EmbedBuilder()
         .setTitle('➖ Retirer un administrateur')
@@ -57,17 +58,36 @@ export async function adminRemove(interaction) {
                 .setStyle(ButtonStyle.Secondary)
         );
     
-    await interaction.update({ embeds: [embed], components: [row, backButton] });
+    const message = await interaction.update({ embeds: [embed], components: [row, backButton], fetchReply: true });
+    
+    // Réactiver le select menu après un court délai
+    setTimeout(async () => {
+        try {
+            const enabledSelect = new UserSelectMenuBuilder()
+                .setCustomId('admin_remove_user_select')
+                .setPlaceholder('Sélectionnez un administrateur à retirer')
+                .setMaxValues(1)
+                .setMinValues(1)
+                .setDisabled(false);
+            
+            const enabledRow = new ActionRowBuilder().addComponents(enabledSelect);
+            await message.edit({ embeds: [embed], components: [enabledRow, backButton] });
+        } catch (error) {
+            console.error('Erreur lors de la réactivation du select menu:', error);
+        }
+    }, 50);
 }
 
 export async function adminRemoveSelect(interaction) {
+    await interaction.deferUpdate();
+    
     const guild = interaction.guild;
     const adminRole = guild.roles.cache.find(r => r.name === 'Bot Pulse Admin');
     const userId = interaction.values[0];
-    const member = await guild.members.fetch(userId);
+    const member = guild.members.cache.get(userId) || await guild.members.fetch(userId);
     
     if (!adminRole) {
-        await interaction.update({
+        await interaction.editReply({
             embeds: [new EmbedBuilder()
                 .setTitle('❌ Erreur')
                 .setDescription('Le rôle "Bot Pulse Admin" n\'existe pas.')
@@ -92,7 +112,7 @@ export async function adminRemoveSelect(interaction) {
                     .setStyle(ButtonStyle.Primary)
             );
         
-        await interaction.update({ embeds: [embed], components: [okButton] });
+        await interaction.editReply({ embeds: [embed], components: [okButton] });
         return;
     }
     
@@ -116,7 +136,7 @@ export async function adminRemoveSelect(interaction) {
                     .setStyle(ButtonStyle.Primary)
             );
         
-        await interaction.update({ embeds: [embed], components: [okButton] });
+        await interaction.editReply({ embeds: [embed], components: [okButton] });
     } catch (error) {
         const embed = new EmbedBuilder()
             .setTitle('❌ Erreur')
@@ -131,6 +151,6 @@ export async function adminRemoveSelect(interaction) {
                     .setStyle(ButtonStyle.Secondary)
             );
         
-        await interaction.update({ embeds: [embed], components: [backButton] });
+        await interaction.editReply({ embeds: [embed], components: [backButton] });
     }
 }
