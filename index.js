@@ -168,6 +168,23 @@ client.on('interactionCreate', async interaction => {
                     });
                 }
             }
+        } else if (interaction.customId === 'hour_morning_modal' || interaction.customId === 'hour_completed_modal') {
+            // Gérer les modals de modification d'heure
+            try {
+                const { hourHandlers } = await import('./components/menuAdmin/hour/hourHandlers.js');
+                if (interaction.customId === 'hour_morning_modal') {
+                    await hourHandlers.hour_morning_modal(interaction);
+                } else {
+                    await hourHandlers.hour_completed_modal(interaction);
+                }
+            } catch (error) {
+                console.error('Erreur lors du traitement du modal d\'heure:', error);
+                if (interaction.isRepliable() && !interaction.replied && !interaction.deferred) {
+                    await interaction.reply({ 
+                        content: '❌ Erreur lors du traitement!'
+                    });
+                }
+            }
         } else {
             await handleButton(interaction);
         }

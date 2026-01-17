@@ -18,6 +18,8 @@ model GuildConfig {
   selectedListName  String?
   selectedProjectId String?
   selectedProjectName String?
+  morningHour       Int?     @default(8)
+  completedHour     Int?     @default(22)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
