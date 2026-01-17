@@ -109,7 +109,7 @@ export async function hourMorningModal(interaction) {
                 const botMessage = messages.find(msg => 
                     msg.author.id === interaction.client.user.id && 
                     msg.embeds.length > 0 &&
-                    msg.embeds[0].title === '🌅 Heure du matin'
+                    (msg.embeds[0].title === '🌅 Heure du matin' || msg.embeds[0].title === '✅ Heure du matin modifiée')
                 );
                 
                 if (botMessage) {
@@ -161,7 +161,7 @@ export async function hourMorningModal(interaction) {
             const botMessage = messages.find(msg => 
                 msg.author.id === interaction.client.user.id && 
                 msg.embeds.length > 0 &&
-                msg.embeds[0].title === '🌅 Heure du matin'
+                (msg.embeds[0].title === '🌅 Heure du matin' || msg.embeds[0].title === '✅ Heure du matin modifiée')
             );
             
             if (botMessage) {
@@ -194,7 +194,10 @@ export async function hourMorningModal(interaction) {
             const botMessage = messages.find(msg => 
                 msg.author.id === interaction.client.user.id && 
                 msg.embeds.length > 0 &&
-                (msg.embeds[0].title === '🌅 Heure du matin' || msg.embeds[0].title === '✅ Heure complétée')
+                (msg.embeds[0].title === '🌅 Heure du matin' || 
+                 msg.embeds[0].title === '✅ Heure du matin modifiée' ||
+                 msg.embeds[0].title === '✅ Heure complétée' ||
+                 msg.embeds[0].title === '✅ Heure complétée modifiée')
             );
             
             if (botMessage) {
