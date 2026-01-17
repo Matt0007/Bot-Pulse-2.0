@@ -16,15 +16,15 @@ export async function projetRemove(interaction) {
                 .setDescription('Aucun projet configuré.')
                 .setColor(0xFFA500);
             
-            const backButton = new ActionRowBuilder()
+            const okButton = new ActionRowBuilder()
                 .addComponents(
                     new ButtonBuilder()
                         .setCustomId('projet_button')
-                        .setLabel('Retour')
-                        .setStyle(ButtonStyle.Secondary)
+                        .setLabel('OK')
+                        .setStyle(ButtonStyle.Primary)
                 );
             
-            await interaction.update({ embeds: [embed], components: [backButton] });
+            await interaction.update({ embeds: [embed], components: [okButton] });
             return;
         }
         
@@ -114,15 +114,15 @@ export async function projetRemoveSelect(interaction) {
             .setDescription(`Le projet "${project.projectName}" a été retiré avec succès.`)
             .setColor(0x00FF00);
         
-        const backButton = new ActionRowBuilder()
+        const okButton = new ActionRowBuilder()
             .addComponents(
                 new ButtonBuilder()
                     .setCustomId('projet_button')
-                    .setLabel('Retour')
-                    .setStyle(ButtonStyle.Secondary)
+                    .setLabel('OK')
+                    .setStyle(ButtonStyle.Primary)
             );
         
-        await interaction.update({ embeds: [embed], components: [backButton] });
+        await interaction.update({ embeds: [embed], components: [okButton] });
     } catch (error) {
         console.error('Erreur lors de la suppression du projet:', error);
         

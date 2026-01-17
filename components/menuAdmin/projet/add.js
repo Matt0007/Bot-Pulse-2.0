@@ -42,15 +42,15 @@ export async function projetAdd(interaction) {
                 .setDescription('Tous les projets ClickUp sont déjà configurés.')
                 .setColor(0xFFA500);
             
-            const backButton = new ActionRowBuilder()
+            const okButton = new ActionRowBuilder()
                 .addComponents(
                     new ButtonBuilder()
                         .setCustomId('projet_button')
-                        .setLabel('Retour')
-                        .setStyle(ButtonStyle.Secondary)
+                        .setLabel('OK')
+                        .setStyle(ButtonStyle.Primary)
                 );
             
-            await interaction.update({ embeds: [embed], components: [backButton] });
+            await interaction.update({ embeds: [embed], components: [okButton] });
             return;
         }
         
@@ -142,15 +142,15 @@ export async function projetAddSelect(interaction) {
                 .setDescription(`Le projet "${selectedProject.name}" est déjà configuré.`)
                 .setColor(0xFFA500);
             
-            const backButton = new ActionRowBuilder()
+            const okButton = new ActionRowBuilder()
                 .addComponents(
                     new ButtonBuilder()
                         .setCustomId('projet_button')
-                        .setLabel('Retour')
-                        .setStyle(ButtonStyle.Secondary)
+                        .setLabel('OK')
+                        .setStyle(ButtonStyle.Primary)
                 );
             
-            await interaction.update({ embeds: [embed], components: [backButton] });
+            await interaction.update({ embeds: [embed], components: [okButton] });
             return;
         }
         
@@ -171,15 +171,15 @@ export async function projetAddSelect(interaction) {
             .setDescription(`Le projet "${selectedProject.name}" a été ajouté avec succès.`)
             .setColor(0x00FF00);
         
-        const backButton = new ActionRowBuilder()
+        const okButton = new ActionRowBuilder()
             .addComponents(
                 new ButtonBuilder()
                     .setCustomId('projet_button')
-                    .setLabel('Retour')
-                    .setStyle(ButtonStyle.Secondary)
+                    .setLabel('OK')
+                    .setStyle(ButtonStyle.Primary)
             );
         
-        await interaction.update({ embeds: [embed], components: [backButton] });
+        await interaction.update({ embeds: [embed], components: [okButton] });
     } catch (error) {
         console.error('Erreur lors de l\'ajout du projet:', error);
         

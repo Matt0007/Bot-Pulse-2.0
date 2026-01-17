@@ -11,6 +11,11 @@ const createBackButton = (customId = 'responsable_button') =>
         new ButtonBuilder().setCustomId(customId).setLabel('Retour').setStyle(ButtonStyle.Secondary)
     );
 
+const createOkButton = (customId = 'responsable_button') => 
+    new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId(customId).setLabel('OK').setStyle(ButtonStyle.Primary)
+    );
+
 const createErrorEmbed = (message) => 
     new EmbedBuilder().setTitle('❌ Erreur').setDescription(message).setColor(0xFF0000);
 
@@ -152,8 +157,8 @@ export async function responsableAddSelectUsers(interaction) {
             });
         
         const buttons = new ActionRowBuilder().addComponents(
-            new ButtonBuilder().setCustomId('responsable_add_validate').setLabel('✅ Valider').setStyle(ButtonStyle.Success),
-            new ButtonBuilder().setCustomId('responsable_add_cancel').setLabel('❌ Annuler').setStyle(ButtonStyle.Danger)
+            new ButtonBuilder().setCustomId('responsable_add_validate').setLabel('Valider').setStyle(ButtonStyle.Success),
+            new ButtonBuilder().setCustomId('responsable_add_cancel').setLabel('Annuler').setStyle(ButtonStyle.Danger)
         );
         
         await interaction.update({ embeds: [embed], components: [buttons] });
@@ -208,7 +213,7 @@ export async function responsableAddValidate(interaction) {
                     .setTitle('⚠️ Utilisateurs déjà ajoutés')
                     .setDescription('Tous les utilisateurs sélectionnés sont déjà dans ce channel.')
                     .setColor(0xFFA500);
-                await interaction.update({ embeds: [embed], components: [createBackButton()] });
+                await interaction.update({ embeds: [embed], components: [createOkButton()] });
                 tempSelections.delete(userId);
                 return;
             }
@@ -269,7 +274,7 @@ export async function responsableAddValidate(interaction) {
                 )
                 .setColor(0x00FF00);
             
-            await interaction.update({ embeds: [embed], components: [createBackButton()] });
+            await interaction.update({ embeds: [embed], components: [createOkButton()] });
             return;
         }
         
@@ -297,7 +302,7 @@ export async function responsableAddValidate(interaction) {
                     .setTitle('⚠️ Channel déjà utilisé')
                     .setDescription(`Le channel <#${existingChannel.id}> est déjà associé à un autre responsable.`)
                     .setColor(0xFFA500);
-                await interaction.update({ embeds: [embed], components: [createBackButton()] });
+                await interaction.update({ embeds: [embed], components: [createOkButton()] });
                 tempSelections.delete(userId);
                 return;
             }
@@ -370,7 +375,7 @@ export async function responsableAddValidate(interaction) {
             )
             .setColor(0x00FF00);
         
-        await interaction.update({ embeds: [embed], components: [createBackButton()] });
+        await interaction.update({ embeds: [embed], components: [createOkButton()] });
     } catch (error) {
         console.error('Erreur lors de la validation:', error);
         await handleError(interaction, `Impossible de créer le responsable: ${error.message}`);
@@ -389,5 +394,5 @@ export async function responsableAddCancel(interaction) {
         .setTitle('❌ Annulé')
         .setDescription('L\'ajout du responsable a été annulé.')
         .setColor(0xFFA500);
-    await interaction.update({ embeds: [embed], components: [createBackButton()] });
+    await interaction.update({ embeds: [embed], components: [createOkButton()] });
 }

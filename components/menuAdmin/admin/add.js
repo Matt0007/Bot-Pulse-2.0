@@ -83,15 +83,15 @@ export async function adminAddSelect(interaction) {
             .setDescription(`${member.displayName || member.user.username} a déjà le rôle admin.`)
             .setColor(0xFFA500);
         
-        const backButton = new ActionRowBuilder()
+        const okButton = new ActionRowBuilder()
             .addComponents(
                 new ButtonBuilder()
                     .setCustomId('admin_button')
-                    .setLabel('Retour')
-                    .setStyle(ButtonStyle.Secondary)
+                    .setLabel('OK')
+                    .setStyle(ButtonStyle.Primary)
             );
         
-        await interaction.update({ embeds: [embed], components: [backButton] });
+        await interaction.update({ embeds: [embed], components: [okButton] });
         return;
     }
     
@@ -107,15 +107,15 @@ export async function adminAddSelect(interaction) {
             .setDescription(`${targetName} a été ajouté au rôle "Bot Pulse Admin".`)
             .setColor(0x00FF00);
         
-        const backButton = new ActionRowBuilder()
+        const okButton = new ActionRowBuilder()
             .addComponents(
                 new ButtonBuilder()
                     .setCustomId('admin_button')
-                    .setLabel('Retour')
-                    .setStyle(ButtonStyle.Secondary)
+                    .setLabel('OK')
+                    .setStyle(ButtonStyle.Primary)
             );
         
-        await interaction.update({ embeds: [embed], components: [backButton] });
+        await interaction.update({ embeds: [embed], components: [okButton] });
     } catch (error) {
         const embed = new EmbedBuilder()
             .setTitle('❌ Erreur')
