@@ -137,10 +137,10 @@ export async function hourCompletedModal(interaction) {
         const userName = interaction.user.displayName || interaction.user.username;
         await logAdminAction(guildId, interaction.user.id, userName, `Modifier heure complétée: ${hour}h`);
 
-        const embed = new EmbedBuilder()
-            .setTitle('✅ Heure complétée')
-            .setDescription(`**Heure actuelle :** ${hour}h`)
-            .setColor(0x5865F2);
+        const successEmbed = new EmbedBuilder()
+            .setTitle('✅ Heure complétée modifiée')
+            .setDescription(`L'heure complétée a été modifiée avec succès.\n\n**Nouvelle heure :** ${hour}h`)
+            .setColor(0x00FF00);
 
         const buttons = new ActionRowBuilder()
             .addComponents(
@@ -154,7 +154,7 @@ export async function hourCompletedModal(interaction) {
                     .setStyle(ButtonStyle.Secondary)
             );
 
-        // Récupérer le message original et le mettre à jour
+        // Récupérer le message original et le mettre à jour avec le message de succès
         try {
             const channel = await interaction.client.channels.fetch(interaction.channel.id);
             const messages = await channel.messages.fetch({ limit: 10 });
@@ -165,7 +165,7 @@ export async function hourCompletedModal(interaction) {
             );
             
             if (botMessage) {
-                await botMessage.edit({ embeds: [embed], components: [buttons] });
+                await botMessage.edit({ embeds: [successEmbed], components: [buttons] });
             }
         } catch (error) {
             console.error('Erreur lors de la mise à jour du message:', error);
