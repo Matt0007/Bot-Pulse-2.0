@@ -33,7 +33,7 @@ export async function helpButton(interaction) {
             },
             {
                 name: 'ℹ️ Informations importantes',
-                value: '• Toutes les commandes doivent être utilisées dans le channel `bot-pulse-admin`\n• Seuls les utilisateurs avec le rôle "Bot Pulse Admin" peuvent utiliser ces fonctionnalités\n• La clé API ClickUp est chiffrée et stockée de manière sécurisée',
+                value: '• Toutes les commandes doivent être utilisées dans le channel `bot-pulse`\n• Seuls les utilisateurs avec le rôle "Bot Pulse Admin" peuvent utiliser ces fonctionnalités\n• La clé API ClickUp est chiffrée et stockée de manière sécurisée',
                 inline: false
             }
         )

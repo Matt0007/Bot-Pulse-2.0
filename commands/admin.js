@@ -39,10 +39,10 @@ export default {
         .setDescription('Accéder au panneau d\'administration'),
     
     async execute(interaction) {
-        // Vérifier que la commande est utilisée dans le channel bot-pulse-admin
-        if (interaction.channel.name !== 'bot-pulse-admin') {
+        // Vérifier que la commande est utilisée dans le channel bot-pulse
+        if (interaction.channel.name !== 'bot-pulse') {
             await interaction.reply({
-                content: '❌ Cette commande ne peut être utilisée que dans le channel `bot-pulse-admin`.',
+                content: '❌ Cette commande ne peut être utilisée que dans le channel `bot-pulse`.',
                 ephemeral: true
             });
             return;

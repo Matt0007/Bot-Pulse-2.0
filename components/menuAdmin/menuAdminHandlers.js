@@ -23,11 +23,11 @@ const buttonHandlers = {
 
 export async function handleButton(interaction) {
     try {
-        // Vérifier que l'interaction se fait dans le channel bot-pulse-admin
-        if (interaction.channel.name !== 'bot-pulse-admin') {
+        // Vérifier que l'interaction se fait dans le channel bot-pulse
+        if (interaction.channel.name !== 'bot-pulse') {
             if (interaction.isRepliable() && !interaction.replied && !interaction.deferred) {
                 await interaction.reply({
-                    content: '❌ Cette interaction ne peut être utilisée que dans le channel `bot-pulse-admin`.',
+                    content: '❌ Cette interaction ne peut être utilisée que dans le channel `bot-pulse`.',
                     ephemeral: true
                 });
             }

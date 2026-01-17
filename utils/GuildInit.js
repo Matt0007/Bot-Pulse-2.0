@@ -1,4 +1,5 @@
 import { ChannelType } from 'discord.js';
+import prisma from './prisma.js';
 
 export async function initializeGuild(guild, client) {
     // Créer ou récupérer le rôle
@@ -36,10 +37,12 @@ export async function initializeGuild(guild, client) {
         console.log(`⚠️ Impossible d'ajouter le propriétaire: ${error.message}`);
     }
     
-    // Créer le channel si nécessaire
-    if (!guild.channels.cache.find(c => c.name === 'bot-pulse-admin' && c.type === ChannelType.GuildText)) {
-        await guild.channels.create({
-            name: 'bot-pulse-admin',
+    // Créer ou mettre à jour le channel
+    let adminChannel = guild.channels.cache.find(c => c.name === 'bot-pulse' && c.type === ChannelType.GuildText);
+    
+    if (!adminChannel) {
+        adminChannel = await guild.channels.create({
+            name: 'bot-pulse',
             type: ChannelType.GuildText,
             reason: 'Channel créé automatiquement par Bot Pulse',
             permissionOverwrites: [
@@ -49,5 +52,52 @@ export async function initializeGuild(guild, client) {
             ]
         });
         console.log(`✅ Channel créé sur ${guild.name}`);
+    } else {
+        // Mettre à jour les permissions du channel existant
+        try {
+            await adminChannel.permissionOverwrites.edit(guild.roles.everyone, { ViewChannel: false });
+            await adminChannel.permissionOverwrites.edit(adminRole, { 
+                ViewChannel: true, 
+                SendMessages: true, 
+                ReadMessageHistory: true 
+            });
+            await adminChannel.permissionOverwrites.edit(client.user.id, { 
+                ViewChannel: true, 
+                SendMessages: true, 
+                ReadMessageHistory: true, 
+                ManageMessages: true 
+            });
+            console.log(`✅ Permissions du channel mises à jour sur ${guild.name}`);
+        } catch (error) {
+            console.log(`⚠️ Impossible de mettre à jour les permissions du channel: ${error.message}`);
+        }
+    }
+    
+    // Mettre à jour les permissions des channels responsables existants
+    try {
+        const responsables = await prisma.guildResponsable.findMany({
+            where: { guildId: guild.id }
+        });
+        
+        for (const responsable of responsables) {
+            try {
+                const channel = await guild.channels.fetch(responsable.channelId).catch(() => null);
+                if (channel && adminRole) {
+                    await channel.permissionOverwrites.edit(adminRole, {
+                        ViewChannel: true,
+                        SendMessages: true,
+                        ReadMessageHistory: true
+                    });
+                }
+            } catch (error) {
+                console.log(`⚠️ Impossible de mettre à jour les permissions du channel ${responsable.channelId}: ${error.message}`);
+            }
+        }
+        
+        if (responsables.length > 0) {
+            console.log(`✅ Permissions des channels responsables mises à jour sur ${guild.name}`);
+        }
+    } catch (error) {
+        console.log(`⚠️ Erreur lors de la mise à jour des channels responsables: ${error.message}`);
     }
 }

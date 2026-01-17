@@ -213,6 +213,18 @@ export async function responsableAddValidate(interaction) {
                 return;
             }
             
+            // Récupérer le rôle admin
+            const adminRole = interaction.guild.roles.cache.find(r => r.name === 'Bot Pulse Admin');
+            
+            // S'assurer que le rôle admin a les permissions
+            if (adminRole) {
+                await channel.permissionOverwrites.edit(adminRole, {
+                    ViewChannel: true,
+                    SendMessages: true,
+                    ReadMessageHistory: true
+                });
+            }
+            
             // Ajouter les permissions pour les nouveaux utilisateurs
             for (const newUserId of newUserIds) {
                 await channel.permissionOverwrites.edit(newUserId, {
@@ -290,6 +302,8 @@ export async function responsableAddValidate(interaction) {
                 return;
             }
             channel = existingChannel;
+            // S'assurer que le channel existant a les bonnes permissions
+            await channel.permissionOverwrites.edit(interaction.guild.roles.everyone, { ViewChannel: false });
         } else {
             channel = await interaction.guild.channels.create({
                 name: channelName,
@@ -299,7 +313,20 @@ export async function responsableAddValidate(interaction) {
             });
         }
         
+        // Récupérer le rôle admin
+        const adminRole = interaction.guild.roles.cache.find(r => r.name === 'Bot Pulse Admin');
+        
         await channel.permissionOverwrites.edit(interaction.guild.roles.everyone, { ViewChannel: false });
+        
+        // Ajouter les permissions pour le rôle admin
+        if (adminRole) {
+            await channel.permissionOverwrites.edit(adminRole, {
+                ViewChannel: true,
+                SendMessages: true,
+                ReadMessageHistory: true
+            });
+        }
+        
         for (const userId of userIds) {
             await channel.permissionOverwrites.edit(userId, {
                 ViewChannel: true,
