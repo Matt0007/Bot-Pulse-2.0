@@ -27,7 +27,7 @@ export async function hourCompletedDetail(interaction) {
                     .setStyle(ButtonStyle.Primary),
                 new ButtonBuilder()
                     .setCustomId('hour_button')
-                    .setLabel('← Retour')
+                    .setLabel('Retour')
                     .setStyle(ButtonStyle.Secondary)
             );
 
@@ -98,7 +98,7 @@ export async function hourCompletedModal(interaction) {
                         .setStyle(ButtonStyle.Primary),
                     new ButtonBuilder()
                         .setCustomId('hour_button')
-                        .setLabel('← Retour')
+                        .setLabel('Retour')
                         .setStyle(ButtonStyle.Secondary)
                 );
 
@@ -150,7 +150,7 @@ export async function hourCompletedModal(interaction) {
                     .setStyle(ButtonStyle.Primary),
                 new ButtonBuilder()
                     .setCustomId('hour_button')
-                    .setLabel('← Retour')
+                    .setLabel('Retour')
                     .setStyle(ButtonStyle.Secondary)
             );
 
@@ -184,7 +184,7 @@ export async function hourCompletedModal(interaction) {
             .addComponents(
                 new ButtonBuilder()
                     .setCustomId('hour_button')
-                    .setLabel('← Retour')
+                    .setLabel('Retour')
                     .setStyle(ButtonStyle.Secondary)
             );
 
