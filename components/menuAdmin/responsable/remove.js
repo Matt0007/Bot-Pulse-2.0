@@ -1,5 +1,6 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, ChannelType } from 'discord.js';
 import prisma from '../../../utils/prisma.js';
+import { logAdminAction } from '../../../utils/history.js';
 
 const tempSelections = new Map();
 
@@ -324,6 +325,10 @@ export async function responsableRemoveValidate(interaction) {
         );
         const validMembers = members.filter(m => m !== null);
         const usersList = validMembers.map(m => `• ${m.displayName || m.user.username}`).join('\n');
+        
+        const userName = interaction.user.displayName || interaction.user.username;
+        const usersNames = validMembers.map(m => m.displayName || m.user.username).join(', ');
+        await logAdminAction(interaction.guild.id, interaction.user.id, userName, `Retirer ${usersNames} de responsable ${responsableName}`);
         
         let description = `Les utilisateurs ont été retirés du channel **${responsableName}**.`;
         if (channelDeleted) {

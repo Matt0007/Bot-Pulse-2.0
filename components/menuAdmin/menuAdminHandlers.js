@@ -4,6 +4,7 @@ import { projetHandlers } from './projet/projetHandlers.js';
 import { responsableHandlers } from './responsable/responsableHandlers.js';
 import { hourHandlers } from './hour/hourHandlers.js';
 import { clickupApiModal } from './parametre/clickup.js';
+import { historyPagination } from './parametre/history.js';
 import { AdminMenuButton } from '../../commands/admin.js';
 
 const buttonHandlers = {
@@ -30,6 +31,12 @@ export async function handleButton(interaction) {
                     ephemeral: true
                 });
             }
+            return;
+        }
+        
+        // Gérer la pagination de l'historique
+        if (interaction.customId === 'history_page_prev' || interaction.customId === 'history_page_next') {
+            await historyPagination(interaction);
             return;
         }
         

@@ -1,4 +1,5 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, UserSelectMenuBuilder } from 'discord.js';
+import { logAdminAction } from '../../../utils/history.js';
 
 export async function adminRemove(interaction) {
     const guild = interaction.guild;
@@ -98,9 +99,13 @@ export async function adminRemoveSelect(interaction) {
     try {
         await member.roles.remove(adminRole, `Retiré par ${interaction.user.tag}`);
         
+        const userName = interaction.user.displayName || interaction.user.username;
+        const targetName = member.displayName || member.user.username;
+        await logAdminAction(interaction.guild.id, interaction.user.id, userName, `Retirer ${targetName} des admins`);
+        
         const embed = new EmbedBuilder()
             .setTitle('✅ Administrateur retiré')
-            .setDescription(`${member.displayName || member.user.username} a été retiré du rôle "Bot Pulse Admin".`)
+            .setDescription(`${targetName} a été retiré du rôle "Bot Pulse Admin".`)
             .setColor(0x00FF00);
         
         const backButton = new ActionRowBuilder()

@@ -1,6 +1,7 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, UserSelectMenuBuilder, ChannelType } from 'discord.js';
 import { useGetAllResponsable } from '../../../hook/clickup/useGetAllResponsable.js';
 import prisma from '../../../utils/prisma.js';
+import { logAdminAction } from '../../../utils/history.js';
 
 const tempSelections = new Map();
 
@@ -243,6 +244,10 @@ export async function responsableAddValidate(interaction) {
             tempSelections.delete(userId);
             const usersList = members.map(m => `• ${m.displayName || m.user.username}`).join('\n');
             
+            const userName = interaction.user.displayName || interaction.user.username;
+            const usersNames = members.map(m => m.displayName || m.user.username).join(', ');
+            await logAdminAction(interaction.guild.id, interaction.user.id, userName, `Ajouter ${usersNames} a responsable ${responsableName}`);
+            
             const embed = new EmbedBuilder()
                 .setTitle('✅ Utilisateurs ajoutés')
                 .setDescription(`**${newUserIds.length}** utilisateur(s) ajouté(s) au channel du responsable **${responsableName}**.`)
@@ -324,6 +329,10 @@ export async function responsableAddValidate(interaction) {
         
         tempSelections.delete(userId);
         const usersList = members.map(m => `• ${m.displayName || m.user.username}`).join('\n');
+        
+        const userName = interaction.user.displayName || interaction.user.username;
+        const usersNames = members.map(m => m.displayName || m.user.username).join(', ');
+        await logAdminAction(interaction.guild.id, interaction.user.id, userName, `Ajouter ${usersNames} a responsable ${responsableName}`);
         
         const embed = new EmbedBuilder()
             .setTitle('✅ Responsable ajouté')

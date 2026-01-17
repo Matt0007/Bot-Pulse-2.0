@@ -1,4 +1,5 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, UserSelectMenuBuilder } from 'discord.js';
+import { logAdminAction } from '../../../utils/history.js';
 
 export async function adminAdd(interaction) {
     const guild = interaction.guild;
@@ -97,9 +98,13 @@ export async function adminAddSelect(interaction) {
     try {
         await member.roles.add(adminRole, `Ajouté par ${interaction.user.tag}`);
         
+        const userName = interaction.user.displayName || interaction.user.username;
+        const targetName = member.displayName || member.user.username;
+        await logAdminAction(interaction.guild.id, interaction.user.id, userName, `Ajouter ${targetName} dans les admins`);
+        
         const embed = new EmbedBuilder()
             .setTitle('✅ Administrateur ajouté')
-            .setDescription(`${member.displayName || member.user.username} a été ajouté au rôle "Bot Pulse Admin".`)
+            .setDescription(`${targetName} a été ajouté au rôle "Bot Pulse Admin".`)
             .setColor(0x00FF00);
         
         const backButton = new ActionRowBuilder()

@@ -60,3 +60,16 @@ model GuildResponsableUser {
   @@unique([responsableId, userId])
   @@map("guild_responsable_users")
 }
+
+// Historique des actions admin
+model HistoryAdmin {
+  id        String   @id @default(cuid())
+  guildId   String
+  userId    String
+  userName  String
+  action    String
+  createdAt DateTime @default(now())
+
+  @@index([guildId, createdAt])
+  @@map("history_admin")
+}

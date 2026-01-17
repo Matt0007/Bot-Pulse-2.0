@@ -1,6 +1,7 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder } from 'discord.js';
 import { useGetAllProject } from '../../../hook/clickup/useGetAllProject.js';
 import prisma from '../../../utils/prisma.js';
+import { logAdminAction } from '../../../utils/history.js';
 
 export async function projetAdd(interaction) {
     try {
@@ -162,6 +163,9 @@ export async function projetAddSelect(interaction) {
                 projectName: selectedProject.name
             }
         });
+        
+        const userName = interaction.user.displayName || interaction.user.username;
+        await logAdminAction(interaction.guild.id, interaction.user.id, userName, `Ajouter projet ${selectedProject.name}`);
         
         const embed = new EmbedBuilder()
             .setTitle('✅ Projet ajouté')

@@ -1,5 +1,6 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder } from 'discord.js';
 import prisma from '../../../utils/prisma.js';
+import { logAdminAction } from '../../../utils/history.js';
 
 export async function projetRemove(interaction) {
     try {
@@ -105,6 +106,9 @@ export async function projetRemoveSelect(interaction) {
         await prisma.guildProject.delete({
             where: { id: projectDbId }
         });
+        
+        const userName = interaction.user.displayName || interaction.user.username;
+        await logAdminAction(interaction.guild.id, interaction.user.id, userName, `Retirer projet ${project.projectName}`);
         
         const embed = new EmbedBuilder()
             .setTitle('✅ Projet retiré')
