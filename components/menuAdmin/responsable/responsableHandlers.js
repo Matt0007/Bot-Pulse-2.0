@@ -1,38 +1,87 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
-import { responsableList } from './List.js';
+import prisma from '../../../utils/prisma.js';
 import { responsableAdd, responsableAddSelectClickUp, responsableAddSelectUsers, responsableAddValidate, responsableAddCancel, responsableAddBackStep1 } from './add.js';
 import { responsableRemove, responsableRemoveSelectChannel, responsableRemoveSelectUsers, responsableRemoveValidate, responsableRemoveCancel, responsableRemoveBackStep1 } from './remove.js';
 
 export const responsableHandlers = {
     responsable_button: async (interaction) => {
-        const embed = new EmbedBuilder()
-            .setTitle('👤 Section Responsable')
-            .setDescription('Gestion des responsables')
-            .setColor(0x5865F2);
-        
-        const buttons = new ActionRowBuilder()
-            .addComponents(
-                new ButtonBuilder()
-                    .setCustomId('responsable_list_button')
-                    .setLabel('Liste')
-                    .setStyle(ButtonStyle.Primary),
-                new ButtonBuilder()
-                    .setCustomId('responsable_add_button')
-                    .setLabel('Ajouter')
-                    .setStyle(ButtonStyle.Success),
-                new ButtonBuilder()
-                    .setCustomId('responsable_remove_button')
-                    .setLabel('Retirer')
-                    .setStyle(ButtonStyle.Danger),
-                new ButtonBuilder()
-                    .setCustomId('back_to_main')
-                    .setLabel('Retour')
-                    .setStyle(ButtonStyle.Secondary)
-            );
-        
-        await interaction.update({ embeds: [embed], components: [buttons] });
+        try {
+            const responsables = await prisma.guildResponsable.findMany({
+                where: { guildId: interaction.guild.id },
+                include: { users: true },
+                orderBy: { responsableName: 'asc' }
+            });
+            
+            let embed;
+            if (!responsables || responsables.length === 0) {
+                embed = new EmbedBuilder()
+                    .setTitle('👤 Section Responsable')
+                    .setDescription('Aucun responsable configuré.\nUtilisez le bouton "Ajouter" pour configurer un responsable.')
+                    .setColor(0xFFA500);
+            } else {
+                const responsableListPromises = responsables.map(async (responsable, index) => {
+                    const channelMention = `<#${responsable.channelId}>`;
+                    const userCount = responsable.users.length;
+                    let usersText = 'Aucun utilisateur';
+                    if (userCount > 0) {
+                        const members = [];
+                        for (const user of responsable.users) {
+                            try {
+                                const member = await interaction.guild.members.fetch(user.userId);
+                                members.push(member.displayName || member.user.username);
+                            } catch (error) {
+                                members.push(`<@${user.userId}> (hors serveur)`);
+                            }
+                        }
+                        const usersList = members.map(name => `   • ${name}`).join('\n');
+                        usersText = `${userCount} utilisateur(s):\n${usersList}`;
+                    }
+                    return `**${index + 1}.** **${responsable.responsableName}**\n   └ Channel: ${channelMention}\n    ${usersText}`;
+                });
+                
+                const responsableList = await Promise.all(responsableListPromises);
+                embed = new EmbedBuilder()
+                    .setTitle('👤 Section Responsable')
+                    .setDescription(responsableList.join('\n\n'))
+                    .setFooter({ text: `Total: ${responsables.length} responsable(s) configuré(s)` })
+                    .setColor(0x5865F2);
+            }
+            
+            const buttons = new ActionRowBuilder()
+                .addComponents(
+                    new ButtonBuilder()
+                        .setCustomId('responsable_add_button')
+                        .setLabel('Ajouter')
+                        .setStyle(ButtonStyle.Success),
+                    new ButtonBuilder()
+                        .setCustomId('responsable_remove_button')
+                        .setLabel('Retirer')
+                        .setStyle(ButtonStyle.Danger),
+                    new ButtonBuilder()
+                        .setCustomId('back_to_main')
+                        .setLabel('Retour')
+                        .setStyle(ButtonStyle.Secondary)
+                );
+            
+            await interaction.update({ embeds: [embed], components: [buttons] });
+        } catch (error) {
+            console.error('Erreur lors de la récupération des responsables:', error);
+            const embed = new EmbedBuilder()
+                .setTitle('👤 Section Responsable')
+                .setDescription(`❌ ${error.message || 'Impossible de récupérer les responsables depuis la base de données.'}`)
+                .setColor(0xFF0000);
+            
+            const buttons = new ActionRowBuilder()
+                .addComponents(
+                    new ButtonBuilder()
+                        .setCustomId('back_to_main')
+                        .setLabel('Retour')
+                        .setStyle(ButtonStyle.Secondary)
+                );
+            
+            await interaction.update({ embeds: [embed], components: [buttons] });
+        }
     },
-    responsable_list_button: responsableList,
     responsable_add_button: responsableAdd,
     responsable_add_select_clickup: responsableAddSelectClickUp,
     responsable_add_select_users: responsableAddSelectUsers,
