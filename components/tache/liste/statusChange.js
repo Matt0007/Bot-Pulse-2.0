@@ -1,7 +1,45 @@
 import { EmbedBuilder } from 'discord.js';
 import { getClickUpApiKey, clickUpRequest } from '../../../utils/clickup.js';
+import { useGetTaskDetails } from '../../../hook/clickup/useGetTaskDetails.js';
 import { getValidCache, replySessionExpired, tasksCache } from './cache.js';
 import { createTaskList, createTaskPaginationComponents, createFooterText } from './pagination.js';
+
+const COMPLETED_STATUSES = ['complete', 'closed', 'done', 'terminé', 'fait', 'terminée', 'complété', 'achevé', 'acheve', 'finished', 'resolved'];
+
+function areAllSubtasksCompleted(task) {
+    if (!task.subtasks?.length) return true;
+    for (const st of task.subtasks) {
+        const s = st.status?.status?.toLowerCase() || '', t = st.status?.type?.toLowerCase() || '';
+        if (!COMPLETED_STATUSES.some(cs => s.includes(cs)) && t !== 'closed' || !areAllSubtasksCompleted(st)) return false;
+    }
+    return true;
+}
+
+function getResponsableFromTask(task) {
+    const f = task.custom_fields?.find(f => (f?.name || '').toLowerCase().trim() === 'responsable');
+    return f?.type === 'drop_down' && f?.value !== undefined && f?.value !== null && f?.type_config?.options?.[f.value]?.name || '—';
+}
+
+async function findIncompleteSubtasks(task, incompleteList = [], apiKey = null) {
+    if (!task.subtasks?.length) return incompleteList;
+    const incomplete = [], toFetch = [];
+    for (const st of task.subtasks) {
+        const s = st.status?.status?.toLowerCase() || '', t = st.status?.type?.toLowerCase() || '';
+        const ok = COMPLETED_STATUSES.some(cs => s.includes(cs)) || t === 'closed';
+        if (!ok) {
+            const resp = getResponsableFromTask(st);
+            incomplete.push({ name: st.name, status: st.status?.status || 'Non défini', responsable: resp });
+            if (resp === '—' && apiKey && st.id) toFetch.push({ idx: incomplete.length - 1, id: st.id });
+        }
+        await findIncompleteSubtasks(st, incompleteList, apiKey);
+    }
+    if (toFetch.length) {
+        const details = await Promise.all(toFetch.map(({ id }) => clickUpRequest(apiKey, `/task/${id}`).catch(() => null)));
+        details.forEach((d, i) => { if (d) incomplete[toFetch[i].idx].responsable = getResponsableFromTask(d); });
+    }
+    incompleteList.push(...incomplete);
+    return incompleteList;
+}
 
 async function getListStatuses(apiKey, listId) {
     try {
@@ -105,6 +143,23 @@ export async function handleTacheStatusChange(interaction) {
         }
 
         const apiKey = await getClickUpApiKey(guildId);
+
+        // Vérification des sous-tâches avant de marquer comme Achevée
+        if (newStatusName === 'Achevée' && !selectedTask.isSubtask) {
+            const taskDetails = await useGetTaskDetails(guildId, selectedTask.id);
+            if (!areAllSubtasksCompleted(taskDetails)) {
+                const incomplete = await findIncompleteSubtasks(taskDetails, [], apiKey);
+                const statusToEmoji = (s) => { const v = (s || '').toLowerCase(); if (v.includes('cours') || v.includes('progress')) return '🟦'; return '⬜'; };
+                const embed = new EmbedBuilder()
+                    .setTitle('❌ Impossible de terminer cette tâche')
+                    .setDescription(`Les sous-tâches suivantes doivent être finies avant de marquer la tâche comme Achevée :\n\n${incomplete.map((st, i) => `${i + 1}. ${statusToEmoji(st.status)} - ${st.name} | ${st.responsable}`).join('\n')}\n\n⬜ - À faire | 🟦 - En cours`)
+                    .setColor(0xFF0000)
+                    .setFooter({ text: `${incomplete.length} sous-tâche${incomplete.length > 1 ? 's' : ''} à compléter` });
+                await interaction.reply({ embeds: [embed]});
+                return;
+            }
+        }
+
         await updateTaskStatus(apiKey, selectedTask.id, selectedTask.listId, newStatusName);
 
         if (newStatusName === 'Achevée') tasks.splice(taskIndex, 1);
