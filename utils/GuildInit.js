@@ -13,13 +13,15 @@ export async function initializeGuild(guild, client) {
         console.log(`✅ Rôle créé sur ${guild.name}`);
     }
     
-    // Placer le rôle en haut
-    const botRole = (await guild.members.fetch(client.user.id)).roles.highest;
-    if (adminRole.position < botRole.position - 1) {
+    // Placer le rôle en dessous du bot
+    const botMember = await guild.members.fetch(client.user.id);
+    const botRole = botMember.roles.highest;
+    if (adminRole.position >= botRole.position) {
         try {
             await adminRole.setPosition(botRole.position - 1);
-        } catch {
-            console.log(`⚠️ Impossible de placer le rôle en haut sur ${guild.name}`);
+            console.log(`✅ Rôle positionné en dessous du bot sur ${guild.name}`);
+        } catch (error) {
+            console.log(`⚠️ Impossible de positionner le rôle: ${error.message}`);
         }
     }
     
