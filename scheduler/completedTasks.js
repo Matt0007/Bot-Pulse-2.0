@@ -85,7 +85,14 @@ async function sendCompletedTasks(client, guildId, responsableName, channelId, c
         const footerText = `${completedTasks.length} tâche(s) complétée(s)${totalPages > 1 ? ` • Page ${currentPage + 1}/${totalPages}` : ''}`;
         const embed = createEmbed(responsableName, tasksList, footerText);
         
-        await channel.send({ embeds: [embed], components: components.length > 0 ? components : undefined });
+        const message = await channel.send({ embeds: [embed], components: components.length > 0 ? components : undefined });
+        
+        // Épingler le message
+        try {
+            await message.pin();
+        } catch (error) {
+            console.error(`Impossible d'épingler le message dans le channel ${channelId}:`, error);
+        }
     } catch (error) {
         console.error(`Erreur lors de l'envoi des tâches complétées pour ${responsableName}:`, error);
     }
