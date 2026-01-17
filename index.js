@@ -7,6 +7,7 @@ import { initializeGuild } from './utils/GuildInit.js';
 import { handleButton } from './components/menuAdmin/menuAdminHandlers.js';
 import { handleTachePagination } from './components/tache/liste/pagination.js';
 import { handleTacheSelect, handleTacheStatusChange } from './components/tache/liste/index.js';
+import { tacheAddModal, tacheAddConfirm, tacheAddCancel, tacheAddModifyModal, tacheAddParamsSelect, tacheAddDateModal, tacheAddPrioritySelect, tacheAddPriorityBack, tacheAddCategorySelect, tacheAddCategoryBack, tacheAddLocationProjectSelect, tacheAddLocationListSelect, tacheAddLocationBack } from './components/tache/add.js';
 
 dotenv.config();
 
@@ -84,6 +85,21 @@ client.on('interactionCreate', async interaction => {
         } else if (interaction.customId.startsWith('tache-status-')) {
             // Interaction de changement de statut
             await handleTacheStatusChange(interaction);
+        } else if (interaction.customId.startsWith('tache_add_confirm_')) {
+            // Confirmation de création de tâche
+            await tacheAddConfirm(interaction);
+        } else if (interaction.customId === 'tache_add_cancel') {
+            // Annulation de création de tâche
+            await tacheAddCancel(interaction);
+        } else if (interaction.customId.startsWith('tache_add_location_back_')) {
+            // Retour à la sélection du projet
+            await tacheAddLocationBack(interaction);
+        } else if (interaction.customId.startsWith('tache_add_priority_back_')) {
+            // Retour au récapitulatif depuis la sélection de priorité
+            await tacheAddPriorityBack(interaction);
+        } else if (interaction.customId.startsWith('tache_add_category_back_')) {
+            // Retour au récapitulatif depuis la sélection de catégorie
+            await tacheAddCategoryBack(interaction);
         } else {
             await handleButton(interaction);
         }
@@ -94,6 +110,21 @@ client.on('interactionCreate', async interaction => {
         // Vérifier si c'est une interaction de sélection de tâche
         if (interaction.customId === 'tache-list-select') {
             await handleTacheSelect(interaction);
+        } else if (interaction.customId.startsWith('tache_add_params_')) {
+            // Sélection d'un paramètre à ajouter
+            await tacheAddParamsSelect(interaction);
+        } else if (interaction.customId.startsWith('tache_add_priority_select_')) {
+            // Sélection de la priorité
+            await tacheAddPrioritySelect(interaction);
+        } else if (interaction.customId.startsWith('tache_add_category_select_')) {
+            // Sélection de la catégorie
+            await tacheAddCategorySelect(interaction);
+        } else if (interaction.customId.startsWith('tache_add_location_project_')) {
+            // Sélection du projet pour modifier l'emplacement
+            await tacheAddLocationProjectSelect(interaction);
+        } else if (interaction.customId.startsWith('tache_add_location_list_')) {
+            // Sélection de la liste pour modifier l'emplacement
+            await tacheAddLocationListSelect(interaction);
         } else {
             await handleButton(interaction);
         }
@@ -101,7 +132,45 @@ client.on('interactionCreate', async interaction => {
     
     // Gérer les modals
     if (interaction.isModalSubmit()) {
-        await handleButton(interaction);
+        // Gérer le modal d'ajout de tâche
+        if (interaction.customId === 'tache_add_modal') {
+            try {
+                await tacheAddModal(interaction);
+            } catch (error) {
+                console.error('Erreur lors du traitement du modal de tâche:', error);
+                if (interaction.isRepliable() && !interaction.replied && !interaction.deferred) {
+                    await interaction.reply({ 
+                        content: '❌ Erreur lors du traitement!'
+                    });
+                }
+            }
+        } else if (interaction.customId.startsWith('tache_add_modify_modal_')) {
+            // Gérer le modal de modification de nom de tâche
+            try {
+                await tacheAddModifyModal(interaction);
+            } catch (error) {
+                console.error('Erreur lors du traitement du modal de modification:', error);
+                if (interaction.isRepliable() && !interaction.replied && !interaction.deferred) {
+                    await interaction.reply({ 
+                        content: '❌ Erreur lors du traitement!'
+                    });
+                }
+            }
+        } else if (interaction.customId.startsWith('tache_add_date_modal_')) {
+            // Gérer le modal de date (début ou échéance)
+            try {
+                await tacheAddDateModal(interaction);
+            } catch (error) {
+                console.error('Erreur lors du traitement du modal de date:', error);
+                if (interaction.isRepliable() && !interaction.replied && !interaction.deferred) {
+                    await interaction.reply({ 
+                        content: '❌ Erreur lors du traitement!'
+                    });
+                }
+            }
+        } else {
+            await handleButton(interaction);
+        }
     }
 });
 
