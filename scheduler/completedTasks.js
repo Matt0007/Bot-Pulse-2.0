@@ -2,10 +2,10 @@ import cron from 'node-cron';
 import prisma from '../utils/prisma.js';
 import { useGetCompletedTasks } from '../hook/clickup/useGetCompletedTasks.js';
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+import { tasksCache } from '../components/tache/liste/cache.js';
 
 export const completedTasksCache = new Map();
 const ITEMS_PER_PAGE = 25;
-const EMBED_COLORS = { ERROR: 0xFF0000, TASK: 0x5865F2 };
 
 function formatDate() {
     const today = new Date();
@@ -17,9 +17,9 @@ function formatDate() {
     return `${jour} ${jourNum}/${mois}/${annee}`;
 }
 
-export function createCompletedTaskList(tasks, currentPage = null) {
-    const startIndex = currentPage !== null ? currentPage * ITEMS_PER_PAGE : 0;
-    const endIndex = currentPage !== null ? Math.min(startIndex + ITEMS_PER_PAGE, tasks.length) : tasks.length;
+function createCompletedTaskList(tasks, currentPage = 0) {
+    const startIndex = currentPage * ITEMS_PER_PAGE;
+    const endIndex = Math.min(startIndex + ITEMS_PER_PAGE, tasks.length);
     const tasksList = [];
     let taskNumber = startIndex;
     
@@ -41,17 +41,13 @@ export function createCompletedTaskList(tasks, currentPage = null) {
     return result + legend;
 }
 
-function createPaginationComponents(tasks, currentPage) {
+function createCompletedPaginationComponents(tasks, currentPage) {
     const totalPages = Math.ceil(tasks.length / ITEMS_PER_PAGE);
-    if (totalPages <= 1) return { components: [], totalPages };
-    
-    return {
-        components: [new ActionRowBuilder().addComponents(
-            new ButtonBuilder().setCustomId('completed-tasks-page-prev').setLabel(' << ').setStyle(ButtonStyle.Secondary).setDisabled(currentPage === 0),
-            new ButtonBuilder().setCustomId('completed-tasks-page-next').setLabel(' >> ').setStyle(ButtonStyle.Secondary).setDisabled(currentPage >= totalPages - 1)
-        )],
-        totalPages
-    };
+    if (totalPages <= 1) return [];
+    return [new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId('completed-tasks-page-prev').setLabel(' << ').setStyle(ButtonStyle.Secondary).setDisabled(currentPage === 0),
+        new ButtonBuilder().setCustomId('completed-tasks-page-next').setLabel(' >> ').setStyle(ButtonStyle.Secondary).setDisabled(currentPage >= totalPages - 1)
+    )];
 }
 
 function createEmbed(responsableName, tasksList, footerText) {
@@ -74,9 +70,22 @@ async function sendCompletedTasks(client, guildId, responsableName, channelId, c
             return;
         }
 
-        const tasksList = createCompletedTaskList(completedTasks);
-        const embed = createEmbed(responsableName, tasksList, `${completedTasks.length} tâche(s) complétée(s)`);
-        await channel.send({ embeds: [embed] });
+        const currentPage = 0;
+        const channelCacheKey = `scheduler-completed-channel-${channelId}`;
+        completedTasksCache.set(channelCacheKey, {
+            tasks: completedTasks,
+            timestamp: Date.now(),
+            currentPage,
+            responsableName
+        });
+
+        const tasksList = createCompletedTaskList(completedTasks, currentPage);
+        const totalPages = Math.ceil(completedTasks.length / ITEMS_PER_PAGE);
+        const components = createCompletedPaginationComponents(completedTasks, currentPage);
+        const footerText = `${completedTasks.length} tâche(s) complétée(s)${totalPages > 1 ? ` • Page ${currentPage + 1}/${totalPages}` : ''}`;
+        const embed = createEmbed(responsableName, tasksList, footerText);
+        
+        await channel.send({ embeds: [embed], components: components.length > 0 ? components : undefined });
     } catch (error) {
         console.error(`Erreur lors de l'envoi des tâches complétées pour ${responsableName}:`, error);
     }
@@ -120,107 +129,33 @@ export function startCompletedTasksScheduler(client) {
     console.log('✅ Scheduler des tâches complétées démarré (lundi à vendredi uniquement)');
 }
 
-export async function tacheCompleted(interaction) {
-    try {
-        await interaction.deferReply();
-
-        const responsable = await prisma.guildResponsable.findUnique({
-            where: { channelId: interaction.channel.id },
-            include: { users: true }
-        });
-        
-        if (!responsable) {
-            return await interaction.editReply({
-                embeds: [new EmbedBuilder().setTitle('❌ Channel non associé')
-                    .setDescription('Ce channel n\'est pas associé à un responsable. Utilisez le menu admin pour associer un responsable à ce channel.')
-                    .setColor(EMBED_COLORS.ERROR)]
-            });
-        }
-        
-        const isUserInResponsable = responsable.users.some(u => u.userId === interaction.user.id);
-        const adminRole = interaction.guild.roles.cache.find(role => role.name === 'Admin Bot' || role.name === 'bot_admin');
-        const isAdmin = adminRole && interaction.member.roles.cache.has(adminRole.id);
-        const isOwner = interaction.guild.ownerId === interaction.user.id;
-        
-        if (!isUserInResponsable && !isAdmin && !isOwner) {
-            return await interaction.editReply({
-                embeds: [new EmbedBuilder().setTitle('❌ Accès refusé')
-                    .setDescription('Cette commande ne peut être utilisée que dans votre channel privé de responsable.')
-                    .setColor(EMBED_COLORS.ERROR)]
-            });
-        }
-
-        const projets = await prisma.guildProject.findMany({ where: { guildId: interaction.guild.id } });
-        if (projets.length === 0) {
-            return await interaction.editReply({
-                embeds: [new EmbedBuilder().setTitle('❌ Aucun projet configuré')
-                    .setDescription('Aucun projet configuré. Un admin doit ajouter des projets.')
-                    .setColor(EMBED_COLORS.ERROR)]
-            });
-        }
-
-        const completedTasks = await useGetCompletedTasks(interaction.guild.id, responsable.responsableName, projets.map(p => p.projectId));
-
-        if (completedTasks.length === 0) {
-            return await interaction.editReply({
-                content: `✅ Aucune tâche complétée aujourd'hui pour **${responsable.responsableName}**.\n\n💡 Vérifiez que:\n- Le statut de la tâche contient "complété" ou "completed"\n- La tâche a été complétée aujourd'hui\n- Le responsable correspond exactement à "${responsable.responsableName}"`
-            });
-        }
-
-        const currentPage = 0;
-        completedTasksCache.set(interaction.user.id, {
-            tasks: completedTasks,
-            currentPage,
-            responsableName: responsable.responsableName,
-            timestamp: Date.now()
-        });
-
-        const tasksList = createCompletedTaskList(completedTasks, currentPage);
-        const { components, totalPages } = createPaginationComponents(completedTasks, currentPage);
-        const footerText = `${completedTasks.length} tâche(s) complétée(s)${totalPages > 1 ? ` • Page ${currentPage + 1}/${totalPages}` : ''}`;
-        const embed = createEmbed(responsable.responsableName, tasksList, footerText);
-
-        await interaction.editReply({
-            embeds: [embed],
-            components: components.length > 0 ? components : undefined
-        });
-    } catch (error) {
-        console.error('Erreur lors de l\'exécution de la commande /tache completed:', error);
-        await interaction.editReply({
-            embeds: [new EmbedBuilder().setTitle('❌ Erreur')
-                .setDescription('Erreur lors de la récupération des tâches complétées. Veuillez réessayer plus tard.')
-                .setColor(EMBED_COLORS.ERROR)]
-        });
-    }
-}
-
 export async function handleCompletedTasksPagination(interaction) {
     try {
-        const userId = interaction.user.id;
-        const cachedData = completedTasksCache.get(userId);
+        const channelCacheKey = `scheduler-completed-channel-${interaction.channel.id}`;
+        const cachedData = completedTasksCache.get(channelCacheKey);
         const sessionTimeout = 30 * 60 * 1000;
         
         if (!cachedData || Date.now() - cachedData.timestamp > sessionTimeout) {
-            if (cachedData) completedTasksCache.delete(userId);
+            if (cachedData) completedTasksCache.delete(channelCacheKey);
             return await interaction.reply({
-                content: '❌ La session a expiré. Utilisez `/tache completed` pour rafraîchir.',
+                content: '❌ La session a expiré. Le message sera renouvelé demain.',
                 ephemeral: true
             });
         }
 
         const { tasks, currentPage, responsableName } = cachedData;
         let newPage = currentPage;
-        
         if (interaction.customId === 'completed-tasks-page-prev') {
             newPage = Math.max(0, currentPage - 1);
         } else if (interaction.customId === 'completed-tasks-page-next') {
             newPage = Math.min(Math.ceil(tasks.length / ITEMS_PER_PAGE) - 1, currentPage + 1);
         }
 
-        completedTasksCache.set(userId, { ...cachedData, currentPage: newPage });
+        completedTasksCache.set(channelCacheKey, { ...cachedData, currentPage: newPage });
 
         const tasksList = createCompletedTaskList(tasks, newPage);
-        const { components, totalPages } = createPaginationComponents(tasks, newPage);
+        const totalPages = Math.ceil(tasks.length / ITEMS_PER_PAGE);
+        const components = createCompletedPaginationComponents(tasks, newPage);
         const footerText = `${tasks.length} tâche(s) complétée(s)${totalPages > 1 ? ` • Page ${newPage + 1}/${totalPages}` : ''}`;
         const embed = createEmbed(responsableName, tasksList, footerText);
 

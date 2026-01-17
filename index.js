@@ -8,8 +8,7 @@ import { handleButton } from './components/menuAdmin/menuAdminHandlers.js';
 import { handleTachePagination } from './components/tache/liste/pagination.js';
 import { handleTacheSelect, handleTacheStatusChange } from './components/tache/liste/index.js';
 import { tacheAddModal, tacheAddConfirm, tacheAddCancel, tacheAddModifyModal, tacheAddParamsSelect, tacheAddDateModal, tacheAddPrioritySelect, tacheAddPriorityBack, tacheAddCategorySelect, tacheAddCategoryBack, tacheAddLocationProjectSelect, tacheAddLocationListSelect, tacheAddLocationBack } from './components/tache/add.js';
-import { handleCompletedTasksPagination } from './scheduler/completedTasks.js';
-import { startCompletedTasksScheduler } from './scheduler/completedTasks.js';
+import { startCompletedTasksScheduler, handleCompletedTasksPagination } from './scheduler/completedTasks.js';
 import { startMorningTasksScheduler, handleMorningTasksPagination } from './scheduler/morningTasks.js';
 
 dotenv.config();
@@ -95,7 +94,6 @@ client.on('interactionCreate', async interaction => {
                 await handleTachePagination(interaction);
             }
         } else if (interaction.customId === 'completed-tasks-page-prev' || interaction.customId === 'completed-tasks-page-next') {
-            // Pagination des tâches complétées
             await handleCompletedTasksPagination(interaction);
         } else if (interaction.customId.startsWith('tache-status-')) {
             // Interaction de changement de statut
