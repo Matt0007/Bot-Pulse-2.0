@@ -87,8 +87,8 @@ export async function clickupApiModal(interaction) {
                 .setColor(0xFFA500);
             
             const buttons = new ActionRowBuilder().addComponents(
-                new ButtonBuilder().setCustomId('clickup_reset_confirm').setLabel('✅ Oui, réinitialiser').setStyle(ButtonStyle.Danger),
-                new ButtonBuilder().setCustomId('clickup_reset_cancel').setLabel('❌ Non, garder les données').setStyle(ButtonStyle.Secondary)
+                new ButtonBuilder().setCustomId('clickup_reset_confirm').setLabel('Oui, réinitialiser').setStyle(ButtonStyle.Danger),
+                new ButtonBuilder().setCustomId('clickup_reset_cancel').setLabel('Non, garder les données').setStyle(ButtonStyle.Secondary)
             );
             
             await interaction.deferUpdate();
