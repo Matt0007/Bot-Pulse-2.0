@@ -33,10 +33,10 @@ export const responsableHandlers = {
                                 members.push(`<@${user.userId}> (hors serveur)`);
                             }
                         }
-                        const usersList = members.map(name => `   • ${name}`).join('\n');
-                        usersText = `${userCount} utilisateur(s):\n${usersList}`;
+                        const usersList = members.map(name => `   _-_ ${name}`).join('\n');
+                        usersText = `${userCount} utilisateur(s) :\n${usersList}`;
                     }
-                    return `**${index + 1}.** **${responsable.responsableName}**\n   └ Channel: ${channelMention}\n    ${usersText}`;
+                    return `**${index + 1}.** **${responsable.responsableName}**\n   └ Channel : ${channelMention}\n    ${usersText}`;
                 });
                 
                 const responsableList = await Promise.all(responsableListPromises);
