@@ -18,6 +18,32 @@ export async function tacheAdd(interaction) {
     try {
         const guildId = interaction.guild.id;
         
+        // Vérifier si on est dans un channel responsable
+        const responsable = await prisma.guildResponsable.findUnique({
+            where: { channelId: interaction.channel.id },
+            include: { users: true }
+        });
+        
+        // Si on est dans un channel responsable, vérifier les permissions
+        if (responsable) {
+            const isUserInResponsable = responsable.users.some(u => u.userId === interaction.user.id);
+            const adminRole = interaction.guild.roles.cache.find(r => r.name === 'Bot Pulse Admin');
+            const isAdmin = adminRole && interaction.member.roles.cache.has(adminRole.id);
+            const isOwner = interaction.guild.ownerId === interaction.user.id;
+            
+            if (!isUserInResponsable && !isAdmin && !isOwner) {
+                await interaction.reply({
+                    embeds: [new EmbedBuilder()
+                        .setTitle('❌ Accès refusé')
+                        .setDescription('Cette commande ne peut être utilisée que dans votre channel privé de responsable.')
+                        .setColor(0xFF0000)
+                    ],
+                    ephemeral: true
+                });
+                return;
+            }
+        }
+        
         // Vérifier que la liste d'ajout est configurée
         const guildConfig = await prisma.guildConfig.findUnique({
             where: { guildId }
@@ -29,7 +55,8 @@ export async function tacheAdd(interaction) {
                     .setTitle('❌ Liste d\'ajout non configurée')
                     .setDescription('Vous devez d\'abord sélectionner une liste d\'ajout dans les paramètres (Paramètre > Liste d\'ajout).')
                     .setColor(0xFF0000)
-                ]
+                ],
+                ephemeral: true
             });
             return;
         }

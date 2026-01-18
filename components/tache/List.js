@@ -36,7 +36,7 @@ export async function tacheList(interaction) {
         
         // Vérifier que l'utilisateur est bien associé à ce responsable (ou qu'il est admin)
         const isUserInResponsable = responsable.users.some(u => u.userId === interaction.user.id);
-        const adminRole = interaction.guild.roles.cache.find(role => role.name === 'Admin Bot' || role.name === 'bot_admin');
+        const adminRole = interaction.guild.roles.cache.find(r => r.name === 'Bot Pulse Admin');
         const isAdmin = adminRole && interaction.member.roles.cache.has(adminRole.id);
         const isOwner = interaction.guild.ownerId === interaction.user.id;
         
