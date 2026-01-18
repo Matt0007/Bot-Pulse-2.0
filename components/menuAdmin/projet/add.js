@@ -47,7 +47,7 @@ export async function projetAdd(interaction) {
                     new ButtonBuilder()
                         .setCustomId('projet_button')
                         .setLabel('OK')
-                        .setStyle(ButtonStyle.Primary)
+                        .setStyle(ButtonStyle.Success)
                 );
             
             await interaction.update({ embeds: [embed], components: [okButton] });
@@ -147,7 +147,7 @@ export async function projetAddSelect(interaction) {
                     new ButtonBuilder()
                         .setCustomId('projet_button')
                         .setLabel('OK')
-                        .setStyle(ButtonStyle.Primary)
+                        .setStyle(ButtonStyle.Success)
                 );
             
             await interaction.update({ embeds: [embed], components: [okButton] });
@@ -176,7 +176,7 @@ export async function projetAddSelect(interaction) {
                 new ButtonBuilder()
                     .setCustomId('projet_button')
                     .setLabel('OK')
-                    .setStyle(ButtonStyle.Primary)
+                    .setStyle(ButtonStyle.Success)
             );
         
         await interaction.update({ embeds: [embed], components: [okButton] });

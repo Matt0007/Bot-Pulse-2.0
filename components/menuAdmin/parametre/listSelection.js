@@ -312,15 +312,15 @@ export async function listSelectionListSelect(interaction) {
             .setDescription(`**Projet :** ${project.name}\n**Liste :** ${listName}`)
             .setColor(0x00FF00);
         
-        const backButton = new ActionRowBuilder()
+        const okButton = new ActionRowBuilder()
             .addComponents(
                 new ButtonBuilder()
                     .setCustomId('list_selection_button')
-                    .setLabel('Retour')
-                    .setStyle(ButtonStyle.Secondary)
+                    .setLabel('OK')
+                    .setStyle(ButtonStyle.Success)
             );
         
-        await interaction.update({ embeds: [embed], components: [backButton] });
+        await interaction.update({ embeds: [embed], components: [okButton] });
     } catch (error) {
         console.error('Erreur lors de la sauvegarde de la liste:', error);
         

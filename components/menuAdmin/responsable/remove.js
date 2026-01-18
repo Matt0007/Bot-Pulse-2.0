@@ -12,7 +12,7 @@ const createBackButton = (customId = 'responsable_button') =>
 
 const createOkButton = (customId = 'responsable_button') => 
     new ActionRowBuilder().addComponents(
-        new ButtonBuilder().setCustomId(customId).setLabel('OK').setStyle(ButtonStyle.Primary)
+        new ButtonBuilder().setCustomId(customId).setLabel('OK').setStyle(ButtonStyle.Success)
     );
 
 const createErrorEmbed = (message) => 

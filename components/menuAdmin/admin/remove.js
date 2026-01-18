@@ -109,7 +109,7 @@ export async function adminRemoveSelect(interaction) {
                 new ButtonBuilder()
                     .setCustomId('admin_button')
                     .setLabel('OK')
-                    .setStyle(ButtonStyle.Primary)
+                    .setStyle(ButtonStyle.Success)
             );
         
         await interaction.editReply({ embeds: [embed], components: [okButton] });
@@ -133,7 +133,7 @@ export async function adminRemoveSelect(interaction) {
                 new ButtonBuilder()
                     .setCustomId('admin_button')
                     .setLabel('OK')
-                    .setStyle(ButtonStyle.Primary)
+                    .setStyle(ButtonStyle.Success)
             );
         
         await interaction.editReply({ embeds: [embed], components: [okButton] });

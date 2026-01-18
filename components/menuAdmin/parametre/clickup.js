@@ -1,10 +1,15 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, ChannelType } from 'discord.js';
 import prisma from '../../../utils/prisma.js';
 import { encrypt, decrypt } from '../../../utils/encryption.js';
+import { logAdminAction } from '../../../utils/history.js';
 
 const createBackButton = () => 
     new ActionRowBuilder().addComponents(
         new ButtonBuilder().setCustomId('parametre_button').setLabel('Retour').setStyle(ButtonStyle.Secondary)
+    );
+const createOkButton = () => 
+    new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId('clickup_button').setLabel('OK').setStyle(ButtonStyle.Success)
     );
 
 const handleError = async (interaction, message) => {
@@ -88,7 +93,8 @@ export async function clickupApiModal(interaction) {
             
             const buttons = new ActionRowBuilder().addComponents(
                 new ButtonBuilder().setCustomId('clickup_reset_confirm').setLabel('Oui, réinitialiser').setStyle(ButtonStyle.Danger),
-                new ButtonBuilder().setCustomId('clickup_reset_cancel').setLabel('Non, garder les données').setStyle(ButtonStyle.Secondary)
+                new ButtonBuilder().setCustomId('clickup_reset_cancel').setLabel('Non, garder les données').setStyle(ButtonStyle.Secondary),
+                new ButtonBuilder().setCustomId('clickup_button').setLabel('Annuler').setStyle(ButtonStyle.Secondary)
             );
             
             await interaction.deferUpdate();
@@ -106,9 +112,9 @@ export async function clickupApiModal(interaction) {
             .setTitle('✅ Clé API ClickUp configurée')
             .setDescription('La clé API ClickUp a été enregistrée et chiffrée avec succès.')
             .setColor(0x00FF00);
-        
+            
         await interaction.deferUpdate();
-        await interaction.editReply({ embeds: [embed], components: [createBackButton()] });
+        await interaction.editReply({ embeds: [embed], components: [createOkButton()] });
     } catch (error) {
         console.error('Erreur lors de la sauvegarde de la clé API:', error);
         await interaction.deferUpdate();
@@ -159,18 +165,35 @@ export async function clickupResetConfirm(interaction) {
         
         await prisma.guildConfig.upsert({
             where: { guildId },
-            update: { clickupApiKey: encryptedApiKey },
+            update: { 
+                clickupApiKey: encryptedApiKey,
+                selectedListId: null,
+                selectedListName: null,
+                selectedProjectId: null,
+                selectedProjectName: null
+            },
             create: { guildId, clickupApiKey: encryptedApiKey }
         });
+        
+        // Supprimer tout l'historique et créer une nouvelle entrée
+        await prisma.historyAdmin.deleteMany({ where: { guildId } });
+        
+        const userName = interaction.user.displayName || interaction.user.username;
+        await logAdminAction(
+            guildId,
+            interaction.user.id,
+            userName,
+            `a changé la clé API et a réinitialisé les données du bot`
+        );
         
         global.tempApiKeys.delete(interaction.user.id);
         
         const embed = new EmbedBuilder()
             .setTitle('✅ Réinitialisation terminée')
-            .setDescription('La clé API ClickUp a été mise à jour et toutes les données ont été réinitialisées.\n\n**Données supprimées :**\n• Tous les projets configurés\n• Tous les responsables et leurs channels\n• La catégorie "responsable"')
+            .setDescription('La clé API ClickUp a été mise à jour et toutes les données ont été réinitialisées.\n\n**Données supprimées :**\n• Tous les projets configurés\n• Tous les responsables et leurs channels\n• La catégorie "responsable"\n• La liste d\'ajout sélectionnée\n• L\'historique (une nouvelle entrée a été créée)')
             .setColor(0x00FF00);
         
-        await interaction.update({ embeds: [embed], components: [createBackButton()] });
+        await interaction.update({ embeds: [embed], components: [createOkButton()] });
     } catch (error) {
         console.error('Erreur lors de la réinitialisation:', error);
         await handleError(interaction, `Impossible de réinitialiser: ${error.message}`);
@@ -198,6 +221,15 @@ export async function clickupResetCancel(interaction) {
             create: { guildId: interaction.guild.id, clickupApiKey: encryptedApiKey }
         });
         
+        // Ajouter une entrée dans l'historique (l'historique est conservé)
+        const userName = interaction.user.displayName || interaction.user.username;
+        await logAdminAction(
+            interaction.guild.id,
+            interaction.user.id,
+            userName,
+            `a changé la clé API et a gardé les données du bot`
+        );
+        
         global.tempApiKeys.delete(interaction.user.id);
         
         const embed = new EmbedBuilder()
@@ -205,7 +237,7 @@ export async function clickupResetCancel(interaction) {
             .setDescription('La clé API ClickUp a été mise à jour. Les données existantes sont conservées.')
             .setColor(0x00FF00);
         
-        await interaction.update({ embeds: [embed], components: [createBackButton()] });
+        await interaction.update({ embeds: [embed], components: [createOkButton()] });
     } catch (error) {
         console.error('Erreur lors de la mise à jour:', error);
         await handleError(interaction, `Impossible de mettre à jour la clé API: ${error.message}`);
