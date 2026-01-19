@@ -171,7 +171,7 @@ export async function handleTacheStatusChange(interaction) {
 
         await interaction.update({
             content: null,
-            embeds: [new EmbedBuilder().setTitle('✅ Tâche mise à jour').setDescription(`La tâche **${selectedTask.nom}** a été mise à jour à **${newStatusName}**.`).setColor(0x5865F2)],
+            embeds: [new EmbedBuilder().setTitle('✅ Tâche mise à jour').setDescription(`La tâche **${selectedTask.nom}** a été mise à jour à **${newStatusName}**.`).setColor(0x00FF00)],
             components: []
         });
     } catch (error) {

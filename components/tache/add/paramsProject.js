@@ -1,4 +1,4 @@
-import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } from 'discord.js';
+import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder } from 'discord.js';
 import { useGetAllProject } from '../../../hook/clickup/useGetAllProject.js';
 import { useGetAllLists } from '../../../hook/clickup/useGetAllLists.js';
 import { taskDataCache, updateRecap } from '../add.js';
@@ -53,19 +53,21 @@ export async function tacheAddLocationProjectSelect(interaction) {
         taskData.tempProjectId = projectId;
         taskDataCache.set(messageId, taskData);
         
-        // Créer le select menu pour les listes
+        // Créer le select menu pour les listes (max 25 options)
+        const selectOptions = lists.slice(0, 25).map(list => {
+            const displayName = list.folderName 
+                ? `${list.name} (${list.folderName})`
+                : list.name;
+            return {
+                label: displayName.length > 100 ? displayName.substring(0, 97) + '...' : displayName,
+                value: list.id
+            };
+        });
+        
         const listSelect = new StringSelectMenuBuilder()
             .setCustomId(`tache_add_location_list_${messageId}`)
-            .setPlaceholder('Sélectionnez une liste');
-        
-        lists.slice(0, 25).forEach(list => {
-            const label = list.name;
-            listSelect.addOptions(
-                new StringSelectMenuOptionBuilder()
-                    .setLabel(label.length > 100 ? label.substring(0, 97) + '...' : label)
-                    .setValue(list.id)
-            );
-        });
+            .setPlaceholder('Sélectionnez une liste')
+            .addOptions(selectOptions);
         
         const selectRow = new ActionRowBuilder().addComponents(listSelect);
         
@@ -86,7 +88,7 @@ export async function tacheAddLocationProjectSelect(interaction) {
                 
                 const tempEmbed = new EmbedBuilder()
                     .setTitle('📋 Modification de l\'emplacement')
-                    .setDescription(`Projet sélectionné: **${project.name}**\n\nSélectionnez une liste`)
+                    .setDescription(`**Projet sélectionné :** ${project.name}\n\nSélectionnez une liste dans le menu ci-dessous`)
                     .setColor(0x5865F2);
                 
                 await message.edit({ embeds: [tempEmbed], components: [selectRow, backButton] });
@@ -152,8 +154,12 @@ export async function tacheAddLocationListSelect(interaction) {
         }
         
         // Mettre à jour le cache avec le nouvel emplacement
+        const listName = selectedList.folderName 
+            ? `${selectedList.name} (${selectedList.folderName})`
+            : selectedList.name;
+        
         taskData.listId = listId;
-        taskData.listName = selectedList.name;
+        taskData.listName = listName;
         taskData.projectId = projectId;
         taskData.projectName = project.name;
         // Supprimer le projectId temporaire
