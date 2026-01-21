@@ -81,17 +81,41 @@ async function sendTaskListToChannel(client, guildId, channelId, responsables) {
 
 async function checkAndSendMorningTasks(client) {
     try {
-        const dayOfWeek = new Date().getDay();
-        if (dayOfWeek === 0 || dayOfWeek === 6) return;
+        // Utiliser le timezone Europe/Paris pour les calculs
+        const timezone = process.env.TZ || 'Europe/Paris';
+        const now = new Date();
+        
+        // Convertir en heure locale Europe/Paris
+        const parisTime = new Date(now.toLocaleString('en-US', { timeZone: timezone }));
+        const dayOfWeek = parisTime.getDay();
+        
+        if (dayOfWeek === 0 || dayOfWeek === 6) {
+            console.log(`[Scheduler Morning] Week-end détecté (jour ${dayOfWeek}), pas d'envoi`);
+            return;
+        }
 
         const guildConfigs = await prisma.guildConfig.findMany({
             where: { morningHour: { not: null }, clickupApiKey: { not: null } }
         });
 
-        const currentHour = new Date().getHours();
+        const currentHour = parisTime.getHours();
+        const currentMinute = parisTime.getMinutes();
+        
+        console.log(`[Scheduler Morning] Vérification à ${String(currentHour).padStart(2, '0')}:${String(currentMinute).padStart(2, '0')} (${timezone}) - ${guildConfigs.length} config(s) trouvée(s)`);
 
         for (const config of guildConfigs) {
-            if (config.morningHour !== currentHour) continue;
+            if (!config.morningHour) continue;
+            
+            // Parser le format HH:MM
+            const [configHour, configMinute] = config.morningHour.split(':').map(Number);
+            
+            // Vérifier si l'heure et la minute correspondent
+            if (configHour !== currentHour || configMinute !== currentMinute) {
+                console.log(`[Scheduler Morning] Config guildId ${config.guildId}: ${config.morningHour} ≠ ${String(currentHour).padStart(2, '0')}:${String(currentMinute).padStart(2, '0')}`);
+                continue;
+            }
+            
+            console.log(`[Scheduler Morning] ✅ Exécution pour guildId ${config.guildId} à ${config.morningHour}`);
 
             try {
                 const responsables = await prisma.guildResponsable.findMany({
@@ -121,8 +145,13 @@ async function checkAndSendMorningTasks(client) {
 }
 
 export function startMorningTasksScheduler(client) {
-    cron.schedule('0 * * * 1-5', () => checkAndSendMorningTasks(client));
-    console.log('✅ Scheduler des tâches matinales démarré (lundi à vendredi uniquement)');
+    const timezone = process.env.TZ || 'Europe/Paris';
+    // Scheduler qui s'exécute toutes les minutes (lundi à vendredi) pour vérifier l'heure exacte
+    cron.schedule('* * * * 1-5', () => checkAndSendMorningTasks(client), {
+        scheduled: true,
+        timezone: timezone
+    });
+    console.log(`✅ Scheduler des tâches matinales démarré (lundi à vendredi uniquement, vérification chaque minute, timezone: ${timezone})`);
 }
 
 export async function handleMorningTasksPagination(interaction) {

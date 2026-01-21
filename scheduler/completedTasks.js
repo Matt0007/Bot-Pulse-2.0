@@ -99,17 +99,41 @@ async function sendCompletedTasks(client, guildId, responsableName, channelId, c
 
 async function checkAndSendCompletedTasks(client) {
     try {
-        const dayOfWeek = new Date().getDay();
-        if (dayOfWeek === 0 || dayOfWeek === 6) return;
+        // Utiliser le timezone Europe/Paris pour les calculs
+        const timezone = process.env.TZ || 'Europe/Paris';
+        const now = new Date();
+        
+        // Convertir en heure locale Europe/Paris
+        const parisTime = new Date(now.toLocaleString('en-US', { timeZone: timezone }));
+        const dayOfWeek = parisTime.getDay();
+        
+        if (dayOfWeek === 0 || dayOfWeek === 6) {
+            console.log(`[Scheduler Completed] Week-end détecté (jour ${dayOfWeek}), pas d'envoi`);
+            return;
+        }
 
         const guildConfigs = await prisma.guildConfig.findMany({
             where: { completedHour: { not: null }, clickupApiKey: { not: null } }
         });
 
-        const currentHour = new Date().getHours();
+        const currentHour = parisTime.getHours();
+        const currentMinute = parisTime.getMinutes();
+        
+        console.log(`[Scheduler Completed] Vérification à ${String(currentHour).padStart(2, '0')}:${String(currentMinute).padStart(2, '0')} (${timezone}) - ${guildConfigs.length} config(s) trouvée(s)`);
 
         for (const config of guildConfigs) {
-            if (config.completedHour !== currentHour) continue;
+            if (!config.completedHour) continue;
+            
+            // Parser le format HH:MM
+            const [configHour, configMinute] = config.completedHour.split(':').map(Number);
+            
+            // Vérifier si l'heure et la minute correspondent
+            if (configHour !== currentHour || configMinute !== currentMinute) {
+                console.log(`[Scheduler Completed] Config guildId ${config.guildId}: ${config.completedHour} ≠ ${String(currentHour).padStart(2, '0')}:${String(currentMinute).padStart(2, '0')}`);
+                continue;
+            }
+            
+            console.log(`[Scheduler Completed] ✅ Exécution pour guildId ${config.guildId} à ${config.completedHour}`);
 
             try {
                 const [responsables, projects] = await Promise.all([
@@ -131,8 +155,13 @@ async function checkAndSendCompletedTasks(client) {
 }
 
 export function startCompletedTasksScheduler(client) {
-    cron.schedule('0 * * * 1-5', () => checkAndSendCompletedTasks(client));
-    console.log('✅ Scheduler des tâches complétées démarré (lundi à vendredi uniquement)');
+    const timezone = process.env.TZ || 'Europe/Paris';
+    // Scheduler qui s'exécute toutes les minutes (lundi à vendredi) pour vérifier l'heure exacte
+    cron.schedule('* * * * 1-5', () => checkAndSendCompletedTasks(client), {
+        scheduled: true,
+        timezone: timezone
+    });
+    console.log(`✅ Scheduler des tâches complétées démarré (lundi à vendredi uniquement, vérification chaque minute, timezone: ${timezone})`);
 }
 
 export async function handleCompletedTasksPagination(interaction) {

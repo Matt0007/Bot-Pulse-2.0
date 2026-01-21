@@ -13,12 +13,12 @@ async function hourList(interaction) {
             where: { guildId }
         });
 
-        const morningHour = guildConfig?.morningHour ?? 8;
-        const completedHour = guildConfig?.completedHour ?? 22;
+        const morningHour = guildConfig?.morningHour ?? '8:00';
+        const completedHour = guildConfig?.completedHour ?? '22:00';
 
         const embed = new EmbedBuilder()
             .setTitle('⏰ Gestion des heures')
-            .setDescription(`**Matin :** ${morningHour}h\n**Complété :** ${completedHour}h`)
+            .setDescription(`**Matin :** ${morningHour}\n**Complété :** ${completedHour}`)
             .setColor(0x5865F2);
 
         const buttons = new ActionRowBuilder()

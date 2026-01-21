@@ -12,11 +12,11 @@ export async function hourCompletedDetail(interaction) {
             where: { guildId }
         });
 
-        const completedHour = guildConfig?.completedHour ?? 22;
+        const completedHour = guildConfig?.completedHour ?? '22:00';
 
         const embed = new EmbedBuilder()
             .setTitle('✅ Heure complétée')
-            .setDescription(`**Heure actuelle :** ${completedHour}h`)
+            .setDescription(`**Heure actuelle :** ${completedHour}`)
             .setColor(0x5865F2);
 
         const buttons = new ActionRowBuilder()
@@ -48,7 +48,7 @@ export async function hourCompletedModify(interaction) {
             where: { guildId }
         });
 
-        const currentHour = guildConfig?.completedHour ?? 22;
+        const currentHour = guildConfig?.completedHour ?? '22:00';
 
         const modal = new ModalBuilder()
             .setCustomId('hour_completed_modal')
@@ -56,12 +56,12 @@ export async function hourCompletedModify(interaction) {
 
         const hourInput = new TextInputBuilder()
             .setCustomId('hour_value')
-            .setLabel('Heure (0-23)')
+            .setLabel('Heure (HH:MM)')
             .setStyle(TextInputStyle.Short)
-            .setPlaceholder('Ex: 22')
+            .setPlaceholder('Ex: 22:00 ou 12:05')
             .setRequired(true)
-            .setMaxLength(2)
-            .setValue(currentHour.toString());
+            .setMaxLength(5)
+            .setValue(currentHour);
 
         const row = new ActionRowBuilder().addComponents(hourInput);
         modal.addComponents(row);
@@ -83,11 +83,12 @@ export async function hourCompletedModal(interaction) {
         const guildId = interaction.guild.id;
         const hourValue = interaction.fields.getTextInputValue('hour_value').trim();
 
-        const hour = parseInt(hourValue);
-        if (isNaN(hour) || hour < 0 || hour > 23) {
+        // Valider le format HH:MM
+        const timeRegex = /^([0-1]?[0-9]|2[0-3]):([0-5][0-9])$/;
+        if (!timeRegex.test(hourValue)) {
             const errorEmbed = new EmbedBuilder()
                 .setTitle('❌ Erreur')
-                .setDescription('L\'heure doit être un nombre entre 0 et 23.')
+                .setDescription('Le format doit être HH:MM (ex: 8:00, 12:05, 22:30).\nLes heures doivent être entre 00:00 et 23:59.')
                 .setColor(0xFF0000);
 
             const buttons = new ActionRowBuilder()
@@ -123,23 +124,27 @@ export async function hourCompletedModal(interaction) {
             return;
         }
 
+        // Normaliser le format (ajouter un 0 devant l'heure si nécessaire)
+        const [hours, minutes] = hourValue.split(':');
+        const normalizedTime = `${hours.padStart(2, '0')}:${minutes}`;
+
         // Mettre à jour ou créer la configuration
         await prisma.guildConfig.upsert({
             where: { guildId },
-            update: { completedHour: hour },
+            update: { completedHour: normalizedTime },
             create: {
                 guildId,
-                completedHour: hour
+                completedHour: normalizedTime
             }
         });
 
         // Enregistrer dans l'historique
         const userName = interaction.user.displayName || interaction.user.username;
-        await logAdminAction(guildId, interaction.user.id, userName, `Modifier heure complétée: ${hour}h`);
+        await logAdminAction(guildId, interaction.user.id, userName, `Modifier heure complétée: ${normalizedTime}`);
 
         const successEmbed = new EmbedBuilder()
             .setTitle('✅ Heure complétée modifiée')
-            .setDescription(`L'heure complétée a été modifiée avec succès.\n\n**Nouvelle heure :** ${hour}h`)
+            .setDescription(`L'heure complétée a été modifiée avec succès.\n\n**Nouvelle heure :** ${normalizedTime}`)
             .setColor(0x00FF00);
 
         const buttons = new ActionRowBuilder()
