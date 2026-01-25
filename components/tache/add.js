@@ -106,9 +106,9 @@ export function buildRecapDescription(taskData, projectName, listName, responsab
         paramsSection += responsableInfo.replace('\n**Responsable :**', '**Responsable :**');
     }
     
-    // Priorité (toujours affichée car elle est en Normal par défaut)
-    const priorityNames = { 1: 'Urgent', 2: 'High', 3: 'Normal', 4: 'Low' };
-    const priorityText = priorityNames[taskData.priority] || 'Normal';
+    // Priorité (toujours affichée car elle est en Normale par défaut)
+    const priorityNames = { 1: 'Urgent', 2: 'Élevé', 3: 'Normale', 4: 'Basse' };
+    const priorityText = priorityNames[taskData.priority] || 'Normale';
     if (paramsSection) {
         paramsSection += `\n**Priorité :** ${priorityText}`;
     } else {
@@ -220,7 +220,8 @@ export async function updateRecap(interaction, messageId) {
                 .setStyle(ButtonStyle.Danger)
         );
     
-    // Récupérer le message original et le mettre à jour
+    // Toujours éditer le message du récapitulatif directement
+    // (on ne peut pas utiliser editReply car l'interaction peut être éphémère depuis un modal)
     try {
         const channel = await interaction.client.channels.fetch(interaction.channel.id);
         const message = await channel.messages.fetch(taskData.messageId);

@@ -8,6 +8,9 @@ import { taskDataCache, buildRecapDescription } from '../add.js';
  */
 export async function tacheAddConfirm(interaction) {
     try {
+        // Différer l'interaction immédiatement pour éviter l'expiration pendant le traitement
+        await interaction.deferUpdate();
+        
         const guildId = interaction.guild.id;
         const customId = interaction.customId;
         
@@ -18,7 +21,7 @@ export async function tacheAddConfirm(interaction) {
         // Récupérer les données depuis le cache
         const taskData = taskDataCache.get(messageId);
         if (!taskData) {
-            await interaction.update({
+            await interaction.editReply({
                 embeds: [new EmbedBuilder()
                     .setTitle('❌ Erreur')
                     .setDescription('Session expirée. Veuillez recommencer.')
@@ -35,7 +38,7 @@ export async function tacheAddConfirm(interaction) {
         const projectName = taskData.projectName || 'Projet inconnu';
         
         if (!listId) {
-            await interaction.update({
+            await interaction.editReply({
                 embeds: [new EmbedBuilder()
                     .setTitle('❌ Erreur')
                     .setDescription('Aucune liste sélectionnée.')
@@ -45,6 +48,16 @@ export async function tacheAddConfirm(interaction) {
             });
             return;
         }
+        
+        // Afficher un message de chargement
+        await interaction.editReply({
+            embeds: [new EmbedBuilder()
+                .setTitle('⏳ Création de la tâche...')
+                .setDescription('Veuillez patienter pendant la création de la tâche dans ClickUp.')
+                .setColor(0x5865F2)
+            ],
+            components: []
+        });
         
         // Créer la tâche dans ClickUp avec tous les paramètres
         await useAddTask(
@@ -77,7 +90,7 @@ export async function tacheAddConfirm(interaction) {
         // Nettoyer le cache
         taskDataCache.delete(messageId);
         
-        await interaction.update({ embeds: [successEmbed], components: [] });
+        await interaction.editReply({ embeds: [successEmbed], components: [] });
     } catch (error) {
         console.error('Erreur lors de la création de la tâche:', error);
         
@@ -85,13 +98,16 @@ export async function tacheAddConfirm(interaction) {
             ? error.message 
             : 'Impossible de créer la tâche dans ClickUp.';
         
-        await interaction.update({
-            embeds: [new EmbedBuilder()
-                .setTitle('❌ Erreur')
-                .setDescription(errorMessage)
-                .setColor(0xFF0000)
-            ],
-            components: []
-        });
+        // Utiliser editReply puisque l'interaction a été différée
+
+            await interaction.editReply({
+                embeds: [new EmbedBuilder()
+                    .setTitle('❌ Erreur')
+                    .setDescription(errorMessage)
+                    .setColor(0xFF0000)
+                ],
+                components: []
+            });
+       
     }
 }

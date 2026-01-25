@@ -3,11 +3,13 @@ import { Client, GatewayIntentBits, Collection } from 'discord.js';
 import fg from 'fast-glob';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
 import { initializeGuild } from './utils/GuildInit.js';
 import { handleButton } from './components/menuAdmin/menuAdminHandlers.js';
 import { handleTachePagination } from './components/tache/liste/pagination.js';
 import { handleTacheSelect, handleTacheStatusChange } from './components/tache/liste/index.js';
 import { tacheAddModal, tacheAddConfirm, tacheAddCancel, tacheAddModifyModal, tacheAddParamsSelect, tacheAddDateModal, tacheAddPrioritySelect, tacheAddPriorityBack, tacheAddCategorySelect, tacheAddCategoryBack, tacheAddLocationProjectSelect, tacheAddLocationListSelect, tacheAddLocationBack } from './components/tache/add.js';
+import { tacheAddCategoryPagination } from './components/tache/add/paramsSelect.js';
 import { startCompletedTasksScheduler, handleCompletedTasksPagination } from './scheduler/completedTasks.js';
 import { startMorningTasksScheduler, handleMorningTasksPagination } from './scheduler/morningTasks.js';
 
@@ -49,6 +51,44 @@ client.once('ready', () => {
     // Démarrer les schedulers
     startCompletedTasksScheduler(client);
     startMorningTasksScheduler(client);
+});
+
+// Gestionnaire d'erreur global pour capturer les erreurs non gérées
+client.on('error', error => {
+    console.error('Erreur Discord non gérée:', error);
+    
+    // Créer le dossier logsError s'il n'existe pas
+    const logsDir = path.join(__dirname, 'logsError');
+    if (!fs.existsSync(logsDir)) {
+        fs.mkdirSync(logsDir, { recursive: true });
+    }
+    
+    // Créer un nom de fichier avec timestamp
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const filename = `error-${timestamp}.json`;
+    const filepath = path.join(logsDir, filename);
+    
+    // Préparer les données de l'erreur
+    const errorData = {
+        timestamp: new Date().toISOString(),
+        code: error.code,
+        message: error.message,
+        name: error.name,
+        stack: error.stack,
+        requestBody: error.requestBody,
+        status: error.status,
+        method: error.method,
+        url: error.url,
+        fullError: JSON.stringify(error, Object.getOwnPropertyNames(error), 2)
+    };
+    
+    // Écrire dans le fichier
+    try {
+        fs.writeFileSync(filepath, JSON.stringify(errorData, null, 2), 'utf8');
+        console.log(`✅ Erreur enregistrée dans: ${filepath}`);
+    } catch (writeError) {
+        console.error('❌ Erreur lors de l\'écriture du fichier de log:', writeError);
+    }
 });
 
 // Quand le bot rejoint un nouveau serveur
@@ -113,6 +153,9 @@ client.on('interactionCreate', async interaction => {
         } else if (interaction.customId.startsWith('tache_add_category_back_')) {
             // Retour au récapitulatif depuis la sélection de catégorie
             await tacheAddCategoryBack(interaction);
+        } else if (interaction.customId.startsWith('tache_add_category_page_')) {
+            // Pagination des catégories
+            await tacheAddCategoryPagination(interaction);
         } else {
             await handleButton(interaction);
         }

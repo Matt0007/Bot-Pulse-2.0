@@ -117,10 +117,20 @@ async function updateListMessage(interaction, cachedData, tasks, updatedCache) {
 
 export async function handleTacheStatusChange(interaction) {
     try {
+        // Différer l'interaction immédiatement pour éviter l'expiration
+        await interaction.deferUpdate();
+        
         const userId = interaction.user.id;
         const cachedData = getValidCache(userId);
         if (!cachedData) {
-            await replySessionExpired(interaction);
+            await interaction.editReply({ 
+                embeds: [new EmbedBuilder()
+                    .setTitle('❌ Session expirée')
+                    .setDescription('Le cache a expiré. Veuillez utiliser `/tache list` à nouveau.')
+                    .setColor(0xFF0000)
+                ],
+                components: []
+            });
             return;
         }
 
@@ -131,16 +141,40 @@ export async function handleTacheStatusChange(interaction) {
         const selectedTask = tasks[taskIndex];
 
         if (!selectedTask) {
-            await interaction.reply({ content: '❌ Tâche non trouvée.', ephemeral: true });
+            await interaction.editReply({ 
+                embeds: [new EmbedBuilder()
+                    .setTitle('❌ Erreur')
+                    .setDescription('Tâche non trouvée.')
+                    .setColor(0xFF0000)
+                ],
+                components: []
+            });
             return;
         }
 
         const statusMap = { 'a-faire': 'À faire', 'en-cours': 'En cours', 'acheve': 'Achevée' };
         const newStatusName = statusMap[newStatusKey];
         if (!newStatusName) {
-            await interaction.reply({ content: '❌ Statut invalide.', ephemeral: true });
+            await interaction.editReply({ 
+                embeds: [new EmbedBuilder()
+                    .setTitle('❌ Erreur')
+                    .setDescription('Statut invalide.')
+                    .setColor(0xFF0000)
+                ],
+                components: []
+            });
             return;
         }
+
+        // Afficher un message de chargement
+        await interaction.editReply({
+            embeds: [new EmbedBuilder()
+                .setTitle('⏳ Mise à jour du statut...')
+                .setDescription('Veuillez patienter pendant la mise à jour du statut dans ClickUp.')
+                .setColor(0x5865F2)
+            ],
+            components: []
+        });
 
         const apiKey = await getClickUpApiKey(guildId);
 
@@ -155,7 +189,7 @@ export async function handleTacheStatusChange(interaction) {
                     .setDescription(`Les sous-tâches suivantes doivent être finies avant de marquer la tâche comme Achevée :\n\n${incomplete.map((st, i) => `${i + 1}. ${statusToEmoji(st.status)} - ${st.name} | ${st.responsable}`).join('\n')}\n\n⬜ - À faire | 🟦 - En cours`)
                     .setColor(0xFF0000)
                     .setFooter({ text: `${incomplete.length} sous-tâche${incomplete.length > 1 ? 's' : ''} à compléter` });
-                await interaction.reply({ embeds: [embed]});
+                await interaction.editReply({ embeds: [embed], components: [] });
                 return;
             }
         }
@@ -169,17 +203,20 @@ export async function handleTacheStatusChange(interaction) {
         tasksCache.set(userId, updatedCache);
         await updateListMessage(interaction, cachedData, tasks, updatedCache);
 
-        await interaction.update({
+        await interaction.editReply({
             content: null,
             embeds: [new EmbedBuilder().setTitle('✅ Tâche mise à jour').setDescription(`La tâche **${selectedTask.nom}** a été mise à jour à **${newStatusName}**.`).setColor(0x00FF00)],
             components: []
         });
     } catch (error) {
         console.error('Erreur lors du changement de statut:', error);
-        if (interaction.isRepliable() && !interaction.replied && !interaction.deferred) {
-            await interaction.reply({ content: '❌ Erreur lors du changement de statut. Veuillez réessayer.', ephemeral: true });
-        } else if (interaction.deferred) {
-            await interaction.editReply({ content: '❌ Erreur lors du changement de statut. Veuillez réessayer.', embeds: [], components: [] });
-        }
+        await interaction.editReply({ 
+            embeds: [new EmbedBuilder()
+                .setTitle('❌ Erreur')
+                .setDescription('Erreur lors du changement de statut. Veuillez réessayer.')
+                .setColor(0xFF0000)
+            ],
+            components: [] 
+        });
     }
 }

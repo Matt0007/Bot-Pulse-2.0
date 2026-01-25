@@ -3,6 +3,33 @@ import prisma from '../../../utils/prisma.js';
 import { taskDataCache, updateRecap, buildRecapDescription } from '../add.js';
 
 /**
+ * Obtient la date d'aujourd'hui en heure de Paris (minuit)
+ * @returns {number} Timestamp en millisecondes
+ */
+function getTodayParisTimestamp() {
+    // Obtenir la date actuelle en heure de Paris
+    const now = new Date();
+    
+    // Obtenir les composants de date en heure de Paris
+    const parisDateParts = now.toLocaleString('fr-FR', { 
+        timeZone: 'Europe/Paris',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+    }).split('/');
+    
+    const day = parseInt(parisDateParts[0]);
+    const month = parseInt(parisDateParts[1]) - 1; // Les mois commencent à 0
+    const year = parseInt(parisDateParts[2]);
+    
+    // Créer une date locale avec ces valeurs à minuit
+    const todayParis = new Date(year, month, day, 0, 0, 0, 0);
+    
+    // Retourner le timestamp
+    return todayParis.getTime();
+}
+
+/**
  * Traite la soumission du modal initial et crée le récapitulatif
  */
 export async function tacheAddModal(interaction) {
@@ -55,6 +82,7 @@ export async function tacheAddModal(interaction) {
         
         // Stocker les données dans le cache
         const messageId = `${interaction.user.id}_${Date.now()}`; // Utiliser un ID unique basé sur l'utilisateur et le timestamp
+        const todayTimestamp = getTodayParisTimestamp();
         taskDataCache.set(messageId, {
             listId,
             listName,
@@ -62,9 +90,9 @@ export async function tacheAddModal(interaction) {
             projectName,
             taskName,
             responsableName,
-            startDate: null,
+            startDate: todayTimestamp, // Date de début automatiquement définie à aujourd'hui (heure de Paris)
             dueDate: null,
-            priority: 3, // Normal par défaut
+            priority: 3, // Normale par défaut
             category: null,
             messageId: null // Sera mis à jour après l'envoi du message
         });
@@ -72,7 +100,7 @@ export async function tacheAddModal(interaction) {
         // Construire la description du récapitulatif
         const initialTaskData = {
             taskName,
-            startDate: null,
+            startDate: todayTimestamp, // Date de début automatiquement définie à aujourd'hui
             dueDate: null,
             priority: 3,
             category: null
