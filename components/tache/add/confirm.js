@@ -32,7 +32,7 @@ export async function tacheAddConfirm(interaction) {
             return;
         }
         
-        // Utiliser les valeurs du cache pour l'emplacement
+        // Utiliser les valeurs du cache pour l'emplacement 
         const listId = taskData.listId;
         const listName = taskData.listName || 'Liste inconnue';
         const projectName = taskData.projectName || 'Projet inconnu';
