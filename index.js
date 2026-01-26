@@ -101,6 +101,12 @@ client.on('guildCreate', async guild => {
     }
 });
 
+async function replyErrorIfRepliable(interaction) {
+    if (interaction.isRepliable() && !interaction.replied && !interaction.deferred) {
+        await interaction.reply({ content: '❌ Erreur lors du traitement!', ephemeral: true });
+    }
+}
+
 // Gérer les interactions (commandes slash, boutons et select menus)
 client.on('interactionCreate', async interaction => {
     // Gérer les commandes slash
@@ -125,64 +131,59 @@ client.on('interactionCreate', async interaction => {
     
     // Gérer les boutons
     if (interaction.isButton()) {
-        // Vérifier si c'est une interaction de pagination des tâches
-        if (interaction.customId === 'tache-list-page-prev' || interaction.customId === 'tache-list-page-next') {
-            // Vérifier si c'est un message du scheduler matinal (via le titre de l'embed)
-            if (interaction.message.embeds[0]?.title?.startsWith('🌅 Bonjour')) {
-                await handleMorningTasksPagination(interaction);
+        try {
+            if (interaction.customId === 'tache-list-page-prev' || interaction.customId === 'tache-list-page-next') {
+                if (interaction.message.embeds[0]?.title?.startsWith('🌅 Bonjour')) {
+                    await handleMorningTasksPagination(interaction);
+                } else {
+                    await handleTachePagination(interaction);
+                }
+            } else if (interaction.customId === 'completed-tasks-page-prev' || interaction.customId === 'completed-tasks-page-next') {
+                await handleCompletedTasksPagination(interaction);
+            } else if (interaction.customId.startsWith('tache-status-')) {
+                await handleTacheStatusChange(interaction);
+            } else if (interaction.customId.startsWith('tache_add_confirm_')) {
+                await tacheAddConfirm(interaction);
+            } else if (interaction.customId === 'tache_add_cancel') {
+                await tacheAddCancel(interaction);
+            } else if (interaction.customId.startsWith('tache_add_location_back_')) {
+                await tacheAddLocationBack(interaction);
+            } else if (interaction.customId.startsWith('tache_add_priority_back_')) {
+                await tacheAddPriorityBack(interaction);
+            } else if (interaction.customId.startsWith('tache_add_category_back_')) {
+                await tacheAddCategoryBack(interaction);
+            } else if (interaction.customId.startsWith('tache_add_category_page_')) {
+                await tacheAddCategoryPagination(interaction);
             } else {
-                await handleTachePagination(interaction);
+                await handleButton(interaction);
             }
-        } else if (interaction.customId === 'completed-tasks-page-prev' || interaction.customId === 'completed-tasks-page-next') {
-            await handleCompletedTasksPagination(interaction);
-        } else if (interaction.customId.startsWith('tache-status-')) {
-            // Interaction de changement de statut
-            await handleTacheStatusChange(interaction);
-        } else if (interaction.customId.startsWith('tache_add_confirm_')) {
-            // Confirmation de création de tâche
-            await tacheAddConfirm(interaction);
-        } else if (interaction.customId === 'tache_add_cancel') {
-            // Annulation de création de tâche
-            await tacheAddCancel(interaction);
-        } else if (interaction.customId.startsWith('tache_add_location_back_')) {
-            // Retour à la sélection du projet
-            await tacheAddLocationBack(interaction);
-        } else if (interaction.customId.startsWith('tache_add_priority_back_')) {
-            // Retour au récapitulatif depuis la sélection de priorité
-            await tacheAddPriorityBack(interaction);
-        } else if (interaction.customId.startsWith('tache_add_category_back_')) {
-            // Retour au récapitulatif depuis la sélection de catégorie
-            await tacheAddCategoryBack(interaction);
-        } else if (interaction.customId.startsWith('tache_add_category_page_')) {
-            // Pagination des catégories
-            await tacheAddCategoryPagination(interaction);
-        } else {
-            await handleButton(interaction);
+        } catch (error) {
+            console.error('Erreur lors du traitement du bouton:', error);
+            await replyErrorIfRepliable(interaction);
         }
     }
     
     // Gérer les select menus (String, User, Role, Channel, Mentionable)
     if (interaction.isAnySelectMenu()) {
-        // Vérifier si c'est une interaction de sélection de tâche
-        if (interaction.customId === 'tache-list-select') {
-            await handleTacheSelect(interaction);
-        } else if (interaction.customId.startsWith('tache_add_params_')) {
-            // Sélection d'un paramètre à ajouter
-            await tacheAddParamsSelect(interaction);
-        } else if (interaction.customId.startsWith('tache_add_priority_select_')) {
-            // Sélection de la priorité
-            await tacheAddPrioritySelect(interaction);
-        } else if (interaction.customId.startsWith('tache_add_category_select_')) {
-            // Sélection de la catégorie
-            await tacheAddCategorySelect(interaction);
-        } else if (interaction.customId.startsWith('tache_add_location_project_')) {
-            // Sélection du projet pour modifier l'emplacement
-            await tacheAddLocationProjectSelect(interaction);
-        } else if (interaction.customId.startsWith('tache_add_location_list_')) {
-            // Sélection de la liste pour modifier l'emplacement
-            await tacheAddLocationListSelect(interaction);
-        } else {
-            await handleButton(interaction);
+        try {
+            if (interaction.customId === 'tache-list-select') {
+                await handleTacheSelect(interaction);
+            } else if (interaction.customId.startsWith('tache_add_params_')) {
+                await tacheAddParamsSelect(interaction);
+            } else if (interaction.customId.startsWith('tache_add_priority_select_')) {
+                await tacheAddPrioritySelect(interaction);
+            } else if (interaction.customId.startsWith('tache_add_category_select_')) {
+                await tacheAddCategorySelect(interaction);
+            } else if (interaction.customId.startsWith('tache_add_location_project_')) {
+                await tacheAddLocationProjectSelect(interaction);
+            } else if (interaction.customId.startsWith('tache_add_location_list_')) {
+                await tacheAddLocationListSelect(interaction);
+            } else {
+                await handleButton(interaction);
+            }
+        } catch (error) {
+            console.error('Erreur lors du traitement du menu:', error);
+            await replyErrorIfRepliable(interaction);
         }
     }
     
@@ -194,38 +195,23 @@ client.on('interactionCreate', async interaction => {
                 await tacheAddModal(interaction);
             } catch (error) {
                 console.error('Erreur lors du traitement du modal de tâche:', error);
-                if (interaction.isRepliable() && !interaction.replied && !interaction.deferred) {
-                    await interaction.reply({ 
-                        content: '❌ Erreur lors du traitement!'
-                    });
-                }
+                await replyErrorIfRepliable(interaction);
             }
         } else if (interaction.customId.startsWith('tache_add_modify_modal_')) {
-            // Gérer le modal de modification de nom de tâche
             try {
                 await tacheAddModifyModal(interaction);
             } catch (error) {
                 console.error('Erreur lors du traitement du modal de modification:', error);
-                if (interaction.isRepliable() && !interaction.replied && !interaction.deferred) {
-                    await interaction.reply({ 
-                        content: '❌ Erreur lors du traitement!'
-                    });
-                }
+                await replyErrorIfRepliable(interaction);
             }
         } else if (interaction.customId.startsWith('tache_add_date_modal_')) {
-            // Gérer le modal de date (début ou échéance)
             try {
                 await tacheAddDateModal(interaction);
             } catch (error) {
                 console.error('Erreur lors du traitement du modal de date:', error);
-                if (interaction.isRepliable() && !interaction.replied && !interaction.deferred) {
-                    await interaction.reply({ 
-                        content: '❌ Erreur lors du traitement!'
-                    });
-                }
+                await replyErrorIfRepliable(interaction);
             }
         } else if (interaction.customId === 'hour_morning_modal' || interaction.customId === 'hour_completed_modal') {
-            // Gérer les modals de modification d'heure
             try {
                 const { hourHandlers } = await import('./components/menuAdmin/hour/hourHandlers.js');
                 if (interaction.customId === 'hour_morning_modal') {
@@ -235,14 +221,15 @@ client.on('interactionCreate', async interaction => {
                 }
             } catch (error) {
                 console.error('Erreur lors du traitement du modal d\'heure:', error);
-                if (interaction.isRepliable() && !interaction.replied && !interaction.deferred) {
-                    await interaction.reply({ 
-                        content: '❌ Erreur lors du traitement!'
-                    });
-                }
+                await replyErrorIfRepliable(interaction);
             }
         } else {
-            await handleButton(interaction);
+            try {
+                await handleButton(interaction);
+            } catch (error) {
+                console.error('Erreur lors du traitement du modal:', error);
+                await replyErrorIfRepliable(interaction);
+            }
         }
     }
 });
