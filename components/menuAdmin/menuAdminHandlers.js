@@ -45,6 +45,9 @@ export async function handleButton(interaction) {
             await handler(interaction);
         } else {
             console.error(`Aucun handler trouvé pour: ${interaction.customId}`);
+            if (interaction.isRepliable() && !interaction.replied && !interaction.deferred) {
+                await interaction.reply({ content: 'Cette action n\'est pas reconnue.', ephemeral: true });
+            }
         }
     } catch (error) {
         console.error('Erreur lors du traitement de l\'interaction:', error);
