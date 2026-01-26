@@ -1,6 +1,8 @@
-import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
 import prisma from '../../../utils/prisma.js';
 import { logAdminAction } from '../../../utils/history.js';
+import { createBackButton } from '../../common/buttons.js';
+import { createErrorEmbed, createInfoEmbed, createSuccessEmbed } from '../../common/embeds.js';
 
 /**
  * Affiche la page de détail pour l'heure du matin
@@ -8,29 +10,14 @@ import { logAdminAction } from '../../../utils/history.js';
 export async function hourMorningDetail(interaction) {
     try {
         const guildId = interaction.guild.id;
-        const guildConfig = await prisma.guildConfig.findUnique({
-            where: { guildId }
-        });
-
+        const guildConfig = await prisma.guildConfig.findUnique({ where: { guildId } });
         const morningHour = guildConfig?.morningHour ?? '8:00';
-
-        const embed = new EmbedBuilder()
-            .setTitle('🌅 Heure du matin')
-            .setDescription(`**Heure actuelle :** ${morningHour}`)
-            .setColor(0x5865F2);
-
+        const embed = createInfoEmbed('🌅 Heure du matin', `**Heure actuelle :** ${morningHour}`);
         const buttons = new ActionRowBuilder()
             .addComponents(
-                new ButtonBuilder()
-                    .setCustomId('hour_morning_modify')
-                    .setLabel('Modifier')
-                    .setStyle(ButtonStyle.Primary),
-                new ButtonBuilder()
-                    .setCustomId('hour_button')
-                    .setLabel('Retour')
-                    .setStyle(ButtonStyle.Secondary)
+                new ButtonBuilder().setCustomId('hour_morning_modify').setLabel('Modifier').setStyle(ButtonStyle.Primary),
+                new ButtonBuilder().setCustomId('hour_button').setLabel('Retour').setStyle(ButtonStyle.Secondary)
             );
-
         await interaction.update({ embeds: [embed], components: [buttons] });
     } catch (error) {
         console.error('Erreur lors de l\'affichage de l\'heure du matin:', error);
@@ -83,24 +70,13 @@ export async function hourMorningModal(interaction) {
         const guildId = interaction.guild.id;
         const hourValue = interaction.fields.getTextInputValue('hour_value').trim();
 
-        // Valider le format HH:MM
         const timeRegex = /^([0-1]?[0-9]|2[0-3]):([0-5][0-9])$/;
         if (!timeRegex.test(hourValue)) {
-            const errorEmbed = new EmbedBuilder()
-                .setTitle('❌ Erreur')
-                .setDescription('Le format doit être HH:MM (ex: 8:00, 12:05, 22:30).\nLes heures doivent être entre 00:00 et 23:59.')
-                .setColor(0xFF0000);
-
+            const errorEmbed = createErrorEmbed('Le format doit être HH:MM (ex: 8:00, 12:05, 22:30).\nLes heures doivent être entre 00:00 et 23:59.');
             const buttons = new ActionRowBuilder()
                 .addComponents(
-                    new ButtonBuilder()
-                        .setCustomId('hour_morning_modify')
-                        .setLabel('Modifier')
-                        .setStyle(ButtonStyle.Primary),
-                    new ButtonBuilder()
-                        .setCustomId('hour_button')
-                        .setLabel('Retour')
-                        .setStyle(ButtonStyle.Secondary)
+                    new ButtonBuilder().setCustomId('hour_morning_modify').setLabel('Modifier').setStyle(ButtonStyle.Primary),
+                    new ButtonBuilder().setCustomId('hour_button').setLabel('Retour').setStyle(ButtonStyle.Secondary)
                 );
 
             // Récupérer le message original et le mettre à jour
@@ -142,21 +118,11 @@ export async function hourMorningModal(interaction) {
         const userName = interaction.user.displayName || interaction.user.username;
         await logAdminAction(guildId, interaction.user.id, userName, `Modifier heure matin: ${normalizedTime}`);
 
-        const successEmbed = new EmbedBuilder()
-            .setTitle('✅ Heure du matin modifiée')
-            .setDescription(`L'heure du matin a été modifiée avec succès.\n\n**Nouvelle heure :** ${normalizedTime}`)
-            .setColor(0x00FF00);
-
+        const successEmbed = createSuccessEmbed('✅ Heure du matin modifiée', `L'heure du matin a été modifiée avec succès.\n\n**Nouvelle heure :** ${normalizedTime}`);
         const buttons = new ActionRowBuilder()
             .addComponents(
-                new ButtonBuilder()
-                    .setCustomId('hour_morning_modify')
-                    .setLabel('Modifier')
-                    .setStyle(ButtonStyle.Primary),
-                new ButtonBuilder()
-                    .setCustomId('hour_button')
-                    .setLabel('Retour')
-                    .setStyle(ButtonStyle.Secondary)
+                new ButtonBuilder().setCustomId('hour_morning_modify').setLabel('Modifier').setStyle(ButtonStyle.Primary),
+                new ButtonBuilder().setCustomId('hour_button').setLabel('Retour').setStyle(ButtonStyle.Secondary)
             );
 
         // Récupérer le message original et le mettre à jour avec le message de succès
@@ -179,19 +145,8 @@ export async function hourMorningModal(interaction) {
         await interaction.deleteReply();
     } catch (error) {
         console.error('Erreur lors de la modification de l\'heure du matin:', error);
-        
-        const errorEmbed = new EmbedBuilder()
-            .setTitle('❌ Erreur')
-            .setDescription('Erreur lors de la modification.')
-            .setColor(0xFF0000);
-
-        const buttons = new ActionRowBuilder()
-            .addComponents(
-                new ButtonBuilder()
-                    .setCustomId('hour_button')
-                    .setLabel('Retour')
-                    .setStyle(ButtonStyle.Secondary)
-            );
+        const errorEmbed = createErrorEmbed('Erreur lors de la modification.');
+        const buttons = createBackButton('hour_button');
 
         try {
             const channel = await interaction.client.channels.fetch(interaction.channel.id);

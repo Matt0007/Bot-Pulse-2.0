@@ -1,29 +1,16 @@
-import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import prisma from '../../../utils/prisma.js';
+import { createBackButton } from '../../common/buttons.js';
+import { createInfoEmbed } from '../../common/embeds.js';
 
 const ITEMS_PER_PAGE = 25;
 
 export async function historyButton(interaction) {
     const guildId = interaction.guild.id;
-    
-    // Récupérer l'historique
     const totalCount = await prisma.historyAdmin.count({ where: { guildId } });
-    
     if (totalCount === 0) {
-        const embed = new EmbedBuilder()
-            .setTitle('📜 Historique Admin')
-            .setDescription('Aucune action enregistrée.')
-            .setColor(0x5865F2);
-        
-        const backButton = new ActionRowBuilder()
-            .addComponents(
-                new ButtonBuilder()
-                    .setCustomId('parametre_button')
-                    .setLabel('Retour')
-                    .setStyle(ButtonStyle.Secondary)
-            );
-        
-        await interaction.update({ embeds: [embed], components: [backButton] });
+        const embed = createInfoEmbed('📜 Historique Admin', 'Aucune action enregistrée.');
+        await interaction.update({ embeds: [embed], components: [createBackButton('parametre_button')] });
         return;
     }
     
@@ -46,39 +33,18 @@ async function displayHistory(interaction, guildId, page, totalPages) {
         return `${number}. **${entry.userName}** - ${entry.action}`;
     }).join('\n');
     
-    const embed = new EmbedBuilder()
-        .setTitle('📜 Historique Admin')
-        .setDescription(historyList || 'Aucune action')
-        .setFooter({ text: `Page ${page + 1}/${totalPages} • ${history.length} action${history.length > 1 ? 's' : ''}` })
-        .setColor(0x5865F2);
-    
+    const embed = createInfoEmbed('📜 Historique Admin', historyList || 'Aucune action')
+        .setFooter({ text: `Page ${page + 1}/${totalPages} • ${history.length} action${history.length > 1 ? 's' : ''}` });
     const components = [];
-    
     if (totalPages > 1) {
         const buttons = new ActionRowBuilder()
             .addComponents(
-                new ButtonBuilder()
-                    .setCustomId('history_page_prev')
-                    .setLabel(' << ')
-                    .setStyle(ButtonStyle.Secondary)
-                    .setDisabled(page === 0),
-                new ButtonBuilder()
-                    .setCustomId('history_page_next')
-                    .setLabel(' >> ')
-                    .setStyle(ButtonStyle.Secondary)
-                    .setDisabled(page >= totalPages - 1)
+                new ButtonBuilder().setCustomId('history_page_prev').setLabel(' << ').setStyle(ButtonStyle.Secondary).setDisabled(page === 0),
+                new ButtonBuilder().setCustomId('history_page_next').setLabel(' >> ').setStyle(ButtonStyle.Secondary).setDisabled(page >= totalPages - 1)
             );
         components.push(buttons);
     }
-    
-    const backButton = new ActionRowBuilder()
-        .addComponents(
-            new ButtonBuilder()
-                .setCustomId('parametre_button')
-                .setLabel('Retour')
-                .setStyle(ButtonStyle.Secondary)
-        );
-    components.push(backButton);
+    components.push(createBackButton('parametre_button'));
     
     await interaction.update({ embeds: [embed], components });
 }

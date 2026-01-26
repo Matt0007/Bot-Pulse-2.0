@@ -1,8 +1,10 @@
-import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder } from 'discord.js';
 import prisma from '../../../utils/prisma.js';
 import { useGetAllProject } from '../../../hook/clickup/useGetAllProject.js';
 import { useGetAllLists } from '../../../hook/clickup/useGetAllLists.js';
 import { logAdminAction } from '../../../utils/history.js';
+import { createBackButton, createOkButton } from '../../common/buttons.js';
+import { createErrorEmbed, createInfoEmbed, createSuccessEmbed, createWarningEmbed } from '../../common/embeds.js';
 
 /**
  * Affiche la page principale de sélection de liste
@@ -10,57 +12,24 @@ import { logAdminAction } from '../../../utils/history.js';
 export async function listSelectionButton(interaction) {
     try {
         const guildId = interaction.guild.id;
-        
-        // Récupérer la liste sélectionnée actuelle
-        const guildConfig = await prisma.guildConfig.findUnique({
-            where: { guildId }
-        });
-        
+        const guildConfig = await prisma.guildConfig.findUnique({ where: { guildId } });
         let description = '';
         if (!guildConfig?.selectedListId || !guildConfig?.selectedListName) {
             description = '**Liste sélectionnée :** Aucun';
         } else {
-            const projectInfo = guildConfig.selectedProjectName 
-                ? `**Projet :** ${guildConfig.selectedProjectName}\n`
-                : '';
+            const projectInfo = guildConfig.selectedProjectName ? `**Projet :** ${guildConfig.selectedProjectName}\n` : '';
             description = `${projectInfo}**Liste :** ${guildConfig.selectedListName}`;
         }
-        
-        const embed = new EmbedBuilder()
-            .setTitle('📋 Sélection de liste d\'ajout')
-            .setDescription(description)
-            .setColor(0x5865F2);
-        
+        const embed = createInfoEmbed('📋 Sélection de liste d\'ajout', description);
         const buttons = new ActionRowBuilder()
             .addComponents(
-                new ButtonBuilder()
-                    .setCustomId('list_selection_modify')
-                    .setLabel('Modifier')
-                    .setStyle(ButtonStyle.Primary),
-                new ButtonBuilder()
-                    .setCustomId('parametre_button')
-                    .setLabel('Fermer')
-                    .setStyle(ButtonStyle.Secondary)
+                new ButtonBuilder().setCustomId('list_selection_modify').setLabel('Modifier').setStyle(ButtonStyle.Primary),
+                new ButtonBuilder().setCustomId('parametre_button').setLabel('Fermer').setStyle(ButtonStyle.Secondary)
             );
-        
         await interaction.update({ embeds: [embed], components: [buttons] });
     } catch (error) {
         console.error('Erreur lors de l\'affichage de la sélection de liste:', error);
-        
-        const embed = new EmbedBuilder()
-            .setTitle('❌ Erreur')
-            .setDescription('Impossible de charger la sélection de liste.')
-            .setColor(0xFF0000);
-        
-        const backButton = new ActionRowBuilder()
-            .addComponents(
-                new ButtonBuilder()
-                    .setCustomId('parametre_button')
-                    .setLabel('Retour')
-                    .setStyle(ButtonStyle.Secondary)
-            );
-        
-        await interaction.update({ embeds: [embed], components: [backButton] });
+        await interaction.update({ embeds: [createErrorEmbed('Impossible de charger la sélection de liste.')], components: [createBackButton('parametre_button')] });
     }
 }
 
@@ -75,20 +44,7 @@ export async function listSelectionModify(interaction) {
         const apiProjects = await useGetAllProject(guildId);
         
         if (!apiProjects || apiProjects.length === 0) {
-            const embed = new EmbedBuilder()
-                .setTitle('❌ Aucun projet trouvé')
-                .setDescription('Aucun projet trouvé dans ClickUp.')
-                .setColor(0xFF0000);
-            
-            const backButton = new ActionRowBuilder()
-                .addComponents(
-                    new ButtonBuilder()
-                        .setCustomId('list_selection_button')
-                        .setLabel('Retour')
-                        .setStyle(ButtonStyle.Secondary)
-                );
-            
-            await interaction.update({ embeds: [embed], components: [backButton] });
+            await interaction.update({ embeds: [createErrorEmbed('Aucun projet trouvé dans ClickUp.')], components: [createBackButton('list_selection_button')] });
             return;
         }
         
@@ -103,38 +59,12 @@ export async function listSelectionModify(interaction) {
             .setPlaceholder('Sélectionnez un projet')
             .addOptions(selectOptions);
         
-        const embed = new EmbedBuilder()
-            .setTitle('📋 Sélection de liste d\'ajout - Étape 1')
-            .setDescription('Sélectionnez un projet pour voir ses listes')
-            .setColor(0x5865F2);
-        
+        const embed = createInfoEmbed('📋 Sélection de liste d\'ajout - Étape 1', 'Sélectionnez un projet pour voir ses listes');
         const row = new ActionRowBuilder().addComponents(selectMenu);
-        const backButton = new ActionRowBuilder()
-            .addComponents(
-                new ButtonBuilder()
-                    .setCustomId('list_selection_button')
-                    .setLabel('Retour')
-                    .setStyle(ButtonStyle.Secondary)
-            );
-        
-        await interaction.update({ embeds: [embed], components: [row, backButton] });
+        await interaction.update({ embeds: [embed], components: [row, createBackButton('list_selection_button')] });
     } catch (error) {
         console.error('Erreur lors de la modification de la sélection de liste:', error);
-        
-        const embed = new EmbedBuilder()
-            .setTitle('❌ Erreur')
-            .setDescription('Impossible de charger les projets.')
-            .setColor(0xFF0000);
-        
-        const backButton = new ActionRowBuilder()
-            .addComponents(
-                new ButtonBuilder()
-                    .setCustomId('list_selection_button')
-                    .setLabel('Retour')
-                    .setStyle(ButtonStyle.Secondary)
-            );
-        
-        await interaction.update({ embeds: [embed], components: [backButton] });
+        await interaction.update({ embeds: [createErrorEmbed('Impossible de charger les projets.')], components: [createBackButton('list_selection_button')] });
     }
 }
 
@@ -151,20 +81,7 @@ export async function listSelectionProjectSelect(interaction) {
         const project = apiProjects.find(p => p.id === projectId);
         
         if (!project) {
-            const embed = new EmbedBuilder()
-                .setTitle('❌ Erreur')
-                .setDescription('Projet non trouvé.')
-                .setColor(0xFF0000);
-            
-            const backButton = new ActionRowBuilder()
-                .addComponents(
-                    new ButtonBuilder()
-                        .setCustomId('list_selection_button')
-                        .setLabel('Retour')
-                        .setStyle(ButtonStyle.Secondary)
-                );
-            
-            await interaction.update({ embeds: [embed], components: [backButton] });
+            await interaction.update({ embeds: [createErrorEmbed('Projet non trouvé.')], components: [createBackButton('list_selection_button')] });
             return;
         }
         
@@ -176,20 +93,7 @@ export async function listSelectionProjectSelect(interaction) {
         const lists = await useGetAllLists(guildId, projectId);
         
         if (lists.length === 0) {
-            const embed = new EmbedBuilder()
-                .setTitle('❌ Aucune liste trouvée')
-                .setDescription(`Aucune liste trouvée dans le projet "${project.name}".`)
-                .setColor(0xFFA500);
-            
-            const backButton = new ActionRowBuilder()
-                .addComponents(
-                    new ButtonBuilder()
-                        .setCustomId('list_selection_modify')
-                        .setLabel('Retour')
-                        .setStyle(ButtonStyle.Secondary)
-                );
-            
-            await interaction.update({ embeds: [embed], components: [backButton] });
+            await interaction.update({ embeds: [createWarningEmbed('❌ Aucune liste trouvée', `Aucune liste trouvée dans le projet "${project.name}".`)], components: [createBackButton('list_selection_modify')] });
             return;
         }
         
@@ -209,38 +113,12 @@ export async function listSelectionProjectSelect(interaction) {
             .setPlaceholder('Sélectionnez une liste')
             .addOptions(selectOptions);
         
-        const embed = new EmbedBuilder()
-            .setTitle('📋 Sélection de liste d\'ajout - Étape 2')
-            .setDescription(`**Projet sélectionné :** ${project.name}\n\nSélectionnez une liste dans le menu ci-dessous`)
-            .setColor(0x5865F2);
-        
+        const embed = createInfoEmbed('📋 Sélection de liste d\'ajout - Étape 2', `**Projet sélectionné :** ${project.name}\n\nSélectionnez une liste dans le menu ci-dessous`);
         const row = new ActionRowBuilder().addComponents(selectMenu);
-        const backButton = new ActionRowBuilder()
-            .addComponents(
-                new ButtonBuilder()
-                    .setCustomId('list_selection_modify')
-                    .setLabel('Retour')
-                    .setStyle(ButtonStyle.Secondary)
-            );
-        
-        await interaction.update({ embeds: [embed], components: [row, backButton] });
+        await interaction.update({ embeds: [embed], components: [row, createBackButton('list_selection_modify')] });
     } catch (error) {
         console.error('Erreur lors de la sélection de projet:', error);
-        
-        const embed = new EmbedBuilder()
-            .setTitle('❌ Erreur')
-            .setDescription(error.message || 'Impossible de charger les listes.')
-            .setColor(0xFF0000);
-        
-        const backButton = new ActionRowBuilder()
-            .addComponents(
-                new ButtonBuilder()
-                    .setCustomId('list_selection_modify')
-                    .setLabel('Retour')
-                    .setStyle(ButtonStyle.Secondary)
-            );
-        
-        await interaction.update({ embeds: [embed], components: [backButton] });
+        await interaction.update({ embeds: [createErrorEmbed(error.message || 'Impossible de charger les listes.')], components: [createBackButton('list_selection_modify')] });
     }
 }
 
@@ -307,36 +185,10 @@ export async function listSelectionListSelect(interaction) {
             : `Changement liste d'ajout: ${listName} (Projet: ${project.name})`;
         await logAdminAction(guildId, interaction.user.id, userName, actionText);
         
-        const embed = new EmbedBuilder()
-            .setTitle('✅ Liste sélectionnée')
-            .setDescription(`**Projet :** ${project.name}\n**Liste :** ${listName}`)
-            .setColor(0x00FF00);
-        
-        const okButton = new ActionRowBuilder()
-            .addComponents(
-                new ButtonBuilder()
-                    .setCustomId('list_selection_button')
-                    .setLabel('OK')
-                    .setStyle(ButtonStyle.Success)
-            );
-        
-        await interaction.update({ embeds: [embed], components: [okButton] });
+        const embed = createSuccessEmbed('✅ Liste sélectionnée', `**Projet :** ${project.name}\n**Liste :** ${listName}`);
+        await interaction.update({ embeds: [embed], components: [createOkButton('list_selection_button')] });
     } catch (error) {
         console.error('Erreur lors de la sauvegarde de la liste:', error);
-        
-        const embed = new EmbedBuilder()
-            .setTitle('❌ Erreur')
-            .setDescription('Impossible de sauvegarder la liste sélectionnée.')
-            .setColor(0xFF0000);
-        
-        const backButton = new ActionRowBuilder()
-            .addComponents(
-                new ButtonBuilder()
-                    .setCustomId('list_selection_modify')
-                    .setLabel('Retour')
-                    .setStyle(ButtonStyle.Secondary)
-            );
-        
-        await interaction.update({ embeds: [embed], components: [backButton] });
+        await interaction.update({ embeds: [createErrorEmbed('Impossible de sauvegarder la liste sélectionnée.')], components: [createBackButton('list_selection_modify')] });
     }
 }

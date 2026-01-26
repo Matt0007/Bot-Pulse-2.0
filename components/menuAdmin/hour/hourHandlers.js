@@ -1,5 +1,6 @@
-import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import prisma from '../../../utils/prisma.js';
+import { createInfoEmbed } from '../../common/embeds.js';
 import { hourMorningDetail, hourMorningModify, hourMorningModal } from './morning.js';
 import { hourCompletedDetail, hourCompletedModify, hourCompletedModal } from './completed.js';
 
@@ -9,18 +10,10 @@ import { hourCompletedDetail, hourCompletedModify, hourCompletedModal } from './
 async function hourList(interaction) {
     try {
         const guildId = interaction.guild.id;
-        const guildConfig = await prisma.guildConfig.findUnique({
-            where: { guildId }
-        });
-
+        const guildConfig = await prisma.guildConfig.findUnique({ where: { guildId } });
         const morningHour = guildConfig?.morningHour ?? '8:00';
         const completedHour = guildConfig?.completedHour ?? '22:00';
-
-        const embed = new EmbedBuilder()
-            .setTitle('⏰ Gestion des heures')
-            .setDescription(`**Matin :** ${morningHour}\n**Complété :** ${completedHour}`)
-            .setColor(0x5865F2);
-
+        const embed = createInfoEmbed('⏰ Gestion des heures', `**Matin :** ${morningHour}\n**Complété :** ${completedHour}`);
         const buttons = new ActionRowBuilder()
             .addComponents(
                 new ButtonBuilder()

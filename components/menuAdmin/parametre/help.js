@@ -1,10 +1,8 @@
-import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+import { createBackButton } from '../../common/buttons.js';
+import { createInfoEmbed } from '../../common/embeds.js';
 
 export async function helpButton(interaction) {
-    const embed = new EmbedBuilder()
-        .setTitle('📚 Guide d\'utilisation - Panneau Admin')
-        .setDescription('Voici toutes les fonctionnalités disponibles dans le panneau d\'administration :')
-        .setColor(0x5865F2)
+    const embed = createInfoEmbed('📚 Guide d\'utilisation - Panneau Admin', 'Voici toutes les fonctionnalités disponibles dans le panneau d\'administration :')
         .addFields(
             {
                 name: '🔧 Section Admin',
@@ -39,13 +37,5 @@ export async function helpButton(interaction) {
         )
         .setFooter({ text: 'Besoin d\'aide ? Contactez un administrateur du serveur.' });
 
-    const backButton = new ActionRowBuilder()
-        .addComponents(
-            new ButtonBuilder()
-                .setCustomId('parametre_button')
-                .setLabel('Retour')
-                .setStyle(ButtonStyle.Secondary)
-        );
-
-    await interaction.update({ embeds: [embed], components: [backButton] });
+    await interaction.update({ embeds: [embed], components: [createBackButton('parametre_button')] });
 }

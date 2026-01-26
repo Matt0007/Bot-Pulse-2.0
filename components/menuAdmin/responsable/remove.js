@@ -1,28 +1,13 @@
-import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, ChannelType } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, ChannelType } from 'discord.js';
 import prisma from '../../../utils/prisma.js';
 import { logAdminAction } from '../../../utils/history.js';
+import { createBackButton, createOkButton } from '../../common/buttons.js';
+import { createErrorEmbed, createInfoEmbed, createSuccessEmbed, createWarningEmbed } from '../../common/embeds.js';
 
 const tempSelections = new Map();
 
-// Fonctions utilitaires
-const createBackButton = (customId = 'responsable_button') => 
-    new ActionRowBuilder().addComponents(
-        new ButtonBuilder().setCustomId(customId).setLabel('Retour').setStyle(ButtonStyle.Secondary)
-    );
-
-const createOkButton = (customId = 'responsable_button') => 
-    new ActionRowBuilder().addComponents(
-        new ButtonBuilder().setCustomId(customId).setLabel('OK').setStyle(ButtonStyle.Success)
-    );
-
-const createErrorEmbed = (message) => 
-    new EmbedBuilder().setTitle('❌ Erreur').setDescription(message).setColor(0xFF0000);
-
 const handleError = async (interaction, message, customId = 'responsable_button') => {
-    await interaction.update({ 
-        embeds: [createErrorEmbed(message)], 
-        components: [createBackButton(customId)] 
-    });
+    await interaction.update({ embeds: [createErrorEmbed(message)], components: [createBackButton(customId)] });
 };
 
 export async function responsableRemove(interaction) {
@@ -39,11 +24,7 @@ export async function responsableRemove(interaction) {
         });
         
         if (!responsables?.length) {
-            const embed = new EmbedBuilder()
-                .setTitle('➖ Retirer des utilisateurs')
-                .setDescription('Aucun responsable configuré.')
-                .setColor(0xFFA500);
-            await interaction.update({ embeds: [embed], components: [createOkButton()] });
+            await interaction.update({ embeds: [createWarningEmbed('➖ Retirer des utilisateurs', 'Aucun responsable configuré.')], components: [createOkButton('responsable_button')] });
             return;
         }
         
@@ -61,16 +42,12 @@ export async function responsableRemove(interaction) {
             .setPlaceholder('Sélectionnez un channel responsable')
             .addOptions(selectOptions);
         
-        const embed = new EmbedBuilder()
-            .setTitle('➖ Retirer des utilisateurs')
-            .setDescription('**Étape 1/2** : Sélectionnez un channel responsable dans le menu ci-dessous')
-            .setColor(0x5865F2);
-        
+        const embed = createInfoEmbed('➖ Retirer des utilisateurs', '**Étape 1/2** : Sélectionnez un channel responsable dans le menu ci-dessous');
         await interaction.update({ 
             embeds: [embed], 
             components: [
                 new ActionRowBuilder().addComponents(selectMenu),
-                createBackButton()
+                createBackButton('responsable_button')
             ] 
         });
     } catch (error) {
@@ -95,11 +72,7 @@ export async function responsableRemoveSelectChannel(interaction) {
         }
         
         if (!responsable.users?.length) {
-            const embed = new EmbedBuilder()
-                .setTitle('⚠️ Aucun utilisateur')
-                .setDescription(`Le channel responsable "${responsable.responsableName}" n'a aucun utilisateur à retirer.`)
-                .setColor(0xFFA500);
-            await interaction.update({ embeds: [embed], components: [createOkButton()] });
+            await interaction.update({ embeds: [createWarningEmbed('⚠️ Aucun utilisateur', `Le channel responsable "${responsable.responsableName}" n'a aucun utilisateur à retirer.`)], components: [createOkButton('responsable_button')] });
             return;
         }
         
@@ -110,11 +83,7 @@ export async function responsableRemoveSelectChannel(interaction) {
         const validMembers = members.filter(m => m !== null);
         
         if (!validMembers.length) {
-            const embed = new EmbedBuilder()
-                .setTitle('⚠️ Utilisateurs introuvables')
-                .setDescription('Les utilisateurs associés ne sont plus sur le serveur.')
-                .setColor(0xFFA500);
-            await interaction.update({ embeds: [embed], components: [createOkButton()] });
+            await interaction.update({ embeds: [createWarningEmbed('⚠️ Utilisateurs introuvables', 'Les utilisateurs associés ne sont plus sur le serveur.')], components: [createOkButton('responsable_button')] });
             return;
         }
         
@@ -141,15 +110,11 @@ export async function responsableRemoveSelectChannel(interaction) {
                 value: member.id
             })));
         
-        const embed = new EmbedBuilder()
-            .setTitle('➖ Retirer des utilisateurs')
-            .setDescription(`**Étape 2/2** : Sélectionnez les utilisateurs à retirer du channel **${responsable.responsableName}**`)
+        const embed = createInfoEmbed('➖ Retirer des utilisateurs', `**Étape 2/2** : Sélectionnez les utilisateurs à retirer du channel **${responsable.responsableName}**`)
             .addFields(
                 { name: 'Channel responsable', value: `<#${responsable.channelId}>`, inline: false },
                 { name: 'Utilisateurs actuels', value: `${responsable.users.length} utilisateur(s)`, inline: false }
-            )
-            .setColor(0x5865F2);
-        
+            );
         const buttons = new ActionRowBuilder().addComponents(
             new ButtonBuilder().setCustomId('responsable_remove_back_step1').setLabel('← Précédent').setStyle(ButtonStyle.Secondary),
             new ButtonBuilder().setCustomId('responsable_remove_cancel').setLabel('Annuler').setStyle(ButtonStyle.Danger)
@@ -211,17 +176,13 @@ export async function responsableRemoveSelectUsers(interaction) {
         // Créer le récapitulatif
         const usersList = validMembers.map(m => `• ${m.displayName || m.user.username}`).join('\n');
         
-        const embed = new EmbedBuilder()
-            .setTitle('📋 Récapitulatif')
-            .setDescription('Vérifiez les informations avant de valider')
+        const embed = createInfoEmbed('📋 Récapitulatif', 'Vérifiez les informations avant de valider')
             .addFields(
                 { name: 'Channel responsable', value: `<#${tempData.channelId}>`, inline: false },
                 { name: 'Responsable', value: tempData.responsableName, inline: false },
                 { name: `Utilisateurs à retirer (${validMembers.length})`, value: usersList || 'Aucun', inline: false }
             )
-            .setColor(0x5865F2)
             .setFooter({ text: 'Cliquez sur "Valider" pour retirer les utilisateurs' });
-        
         const buttons = new ActionRowBuilder().addComponents(
             new ButtonBuilder().setCustomId('responsable_remove_validate').setLabel('Valider').setStyle(ButtonStyle.Success),
             new ButtonBuilder().setCustomId('responsable_remove_cancel').setLabel('Annuler').setStyle(ButtonStyle.Danger)
@@ -343,15 +304,9 @@ export async function responsableRemoveValidate(interaction) {
             description += `\n\nLa catégorie "responsable" a été supprimée car elle ne contenait plus de channels.`;
         }
         
-        const embed = new EmbedBuilder()
-            .setTitle('✅ Utilisateurs retirés')
-            .setDescription(description)
-            .addFields(
-                { name: `Utilisateurs retirés (${validMembers.length})`, value: usersList || 'Aucun', inline: false }
-            )
-            .setColor(0x00FF00);
-        
-        await interaction.update({ embeds: [embed], components: [createOkButton()] });
+        const embed = createSuccessEmbed('✅ Utilisateurs retirés', description)
+            .addFields({ name: `Utilisateurs retirés (${validMembers.length})`, value: usersList || 'Aucun', inline: false });
+        await interaction.update({ embeds: [embed], components: [createOkButton('responsable_button')] });
     } catch (error) {
         console.error('Erreur lors de la validation:', error);
         await handleError(interaction, `Impossible de retirer les utilisateurs: ${error.message}`);
@@ -366,9 +321,6 @@ export async function responsableRemoveBackStep1(interaction) {
 
 export async function responsableRemoveCancel(interaction) {
     tempSelections.delete(interaction.user.id);
-    const embed = new EmbedBuilder()
-        .setTitle('❌ Annulé')
-        .setDescription('La suppression des utilisateurs a été annulée.')
-        .setColor(0xFFA500);
-    await interaction.update({ embeds: [embed], components: [createOkButton()] });
+    const embed = createWarningEmbed('❌ Annulé', 'La suppression des utilisateurs a été annulée.');
+    await interaction.update({ embeds: [embed], components: [createOkButton('responsable_button')] });
 }

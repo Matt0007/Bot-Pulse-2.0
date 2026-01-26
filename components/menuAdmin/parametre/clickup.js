@@ -1,24 +1,18 @@
-import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, ChannelType } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, ChannelType } from 'discord.js';
 import prisma from '../../../utils/prisma.js';
 import { encrypt, decrypt } from '../../../utils/encryption.js';
 import { logAdminAction } from '../../../utils/history.js';
-
-const createBackButton = () => 
-    new ActionRowBuilder().addComponents(
-        new ButtonBuilder().setCustomId('parametre_button').setLabel('Retour').setStyle(ButtonStyle.Secondary)
-    );
-const createOkButton = () => 
-    new ActionRowBuilder().addComponents(
-        new ButtonBuilder().setCustomId('clickup_button').setLabel('OK').setStyle(ButtonStyle.Success)
-    );
+import { createBackButton, createOkButton } from '../../common/buttons.js';
+import { createErrorEmbed, createInfoEmbed, createSuccessEmbed, createWarningEmbed } from '../../common/embeds.js';
 
 const handleError = async (interaction, message) => {
-    const embed = new EmbedBuilder().setTitle('❌ Erreur').setDescription(message).setColor(0xFF0000);
+    const embed = createErrorEmbed(message);
+    const back = createBackButton('parametre_button');
     if (interaction.replied || interaction.deferred) {
-        await interaction.editReply({ embeds: [embed], components: [createBackButton()] });
+        await interaction.editReply({ embeds: [embed], components: [back] });
     } else {
         await interaction.deferUpdate();
-        await interaction.editReply({ embeds: [embed], components: [createBackButton()] });
+        await interaction.editReply({ embeds: [embed], components: [back] });
     }
 };
 
@@ -34,13 +28,10 @@ export async function clickupButton(interaction) {
             }
         }
         
-        const embed = new EmbedBuilder()
-            .setTitle('🔑 Clé API ClickUp')
-            .setDescription(hasApiKey 
-                ? '✅ Une clé API est configurée.\nCliquez sur "Modifier" pour la changer.'
-                : '❌ Aucune clé API configurée.\nCliquez sur "Configurer" pour en ajouter une.')
-            .setColor(hasApiKey ? 0x00FF00 : 0xFF0000);
-        
+        const desc = hasApiKey
+            ? '✅ Une clé API est configurée.\nCliquez sur "Modifier" pour la changer.'
+            : '❌ Aucune clé API configurée.\nCliquez sur "Configurer" pour en ajouter une.';
+        const embed = createInfoEmbed('🔑 Clé API ClickUp', desc).setColor(hasApiKey ? 0x00FF00 : 0xFF0000);
         const buttons = new ActionRowBuilder().addComponents(
             new ButtonBuilder().setCustomId('clickup_configure_button').setLabel(hasApiKey ? 'Modifier' : 'Configurer').setStyle(hasApiKey ? ButtonStyle.Secondary : ButtonStyle.Success),
             new ButtonBuilder().setCustomId('parametre_button').setLabel('Retour').setStyle(ButtonStyle.Secondary)
@@ -49,10 +40,7 @@ export async function clickupButton(interaction) {
         await interaction.update({ embeds: [embed], components: [buttons] });
     } catch (error) {
         console.error('Erreur lors de la récupération de la config:', error);
-        await interaction.update({ 
-            embeds: [new EmbedBuilder().setTitle('❌ Erreur').setDescription('Impossible de charger la configuration.').setColor(0xFF0000)], 
-            components: [] 
-        });
+        await interaction.update({ embeds: [createErrorEmbed('Impossible de charger la configuration.')], components: [] });
     }
 }
 
@@ -86,10 +74,10 @@ export async function clickupApiModal(interaction) {
             if (!global.tempApiKeys) global.tempApiKeys = new Map();
             global.tempApiKeys.set(interaction.user.id, encryptedApiKey);
             
-            const embed = new EmbedBuilder()
-                .setTitle('⚠️ Clé API existante détectée')
-                .setDescription('Une clé API est déjà configurée.\n\n**Voulez-vous réinitialiser les données du bot ?**\n\nCela supprimera :\n• Tous les projets configurés\n• Tous les responsables et leurs channels\n• La catégorie "responsable"')
-                .setColor(0xFFA500);
+            const embed = createWarningEmbed(
+                '⚠️ Clé API existante détectée',
+                'Une clé API est déjà configurée.\n\n**Voulez-vous réinitialiser les données du bot ?**\n\nCela supprimera :\n• Tous les projets configurés\n• Tous les responsables et leurs channels\n• La catégorie "responsable"'
+            );
             
             const buttons = new ActionRowBuilder().addComponents(
                 new ButtonBuilder().setCustomId('clickup_reset_confirm').setLabel('Oui, réinitialiser').setStyle(ButtonStyle.Danger),
@@ -108,19 +96,13 @@ export async function clickupApiModal(interaction) {
             create: { guildId: interaction.guild.id, clickupApiKey: encryptedApiKey }
         });
         
-        const embed = new EmbedBuilder()
-            .setTitle('✅ Clé API ClickUp configurée')
-            .setDescription('La clé API ClickUp a été enregistrée et chiffrée avec succès.')
-            .setColor(0x00FF00);
-            
+        const embed = createSuccessEmbed('✅ Clé API ClickUp configurée', 'La clé API ClickUp a été enregistrée et chiffrée avec succès.');
         await interaction.deferUpdate();
-        await interaction.editReply({ embeds: [embed], components: [createOkButton()] });
+        await interaction.editReply({ embeds: [embed], components: [createOkButton('clickup_button')] });
     } catch (error) {
         console.error('Erreur lors de la sauvegarde de la clé API:', error);
         await interaction.deferUpdate();
-        await interaction.editReply({ 
-            embeds: [new EmbedBuilder().setTitle('❌ Erreur').setDescription('Impossible de sauvegarder la clé API.').setColor(0xFF0000)] 
-        });
+        await interaction.editReply({ embeds: [createErrorEmbed('Impossible de sauvegarder la clé API.')] });
     }
 }
 
@@ -188,12 +170,11 @@ export async function clickupResetConfirm(interaction) {
         
         global.tempApiKeys.delete(interaction.user.id);
         
-        const embed = new EmbedBuilder()
-            .setTitle('✅ Réinitialisation terminée')
-            .setDescription('La clé API ClickUp a été mise à jour et toutes les données ont été réinitialisées.\n\n**Données supprimées :**\n• Tous les projets configurés\n• Tous les responsables et leurs channels\n• La catégorie "responsable"\n• La liste d\'ajout sélectionnée\n• L\'historique (une nouvelle entrée a été créée)')
-            .setColor(0x00FF00);
-        
-        await interaction.update({ embeds: [embed], components: [createOkButton()] });
+        const embed = createSuccessEmbed(
+            '✅ Réinitialisation terminée',
+            'La clé API ClickUp a été mise à jour et toutes les données ont été réinitialisées.\n\n**Données supprimées :**\n• Tous les projets configurés\n• Tous les responsables et leurs channels\n• La catégorie "responsable"\n• La liste d\'ajout sélectionnée\n• L\'historique (une nouvelle entrée a été créée)'
+        );
+        await interaction.update({ embeds: [embed], components: [createOkButton('clickup_button')] });
     } catch (error) {
         console.error('Erreur lors de la réinitialisation:', error);
         await handleError(interaction, `Impossible de réinitialiser: ${error.message}`);
@@ -232,12 +213,8 @@ export async function clickupResetCancel(interaction) {
         
         global.tempApiKeys.delete(interaction.user.id);
         
-        const embed = new EmbedBuilder()
-            .setTitle('✅ Clé API mise à jour')
-            .setDescription('La clé API ClickUp a été mise à jour. Les données existantes sont conservées.')
-            .setColor(0x00FF00);
-        
-        await interaction.update({ embeds: [embed], components: [createOkButton()] });
+        const embed = createSuccessEmbed('✅ Clé API mise à jour', 'La clé API ClickUp a été mise à jour. Les données existantes sont conservées.');
+        await interaction.update({ embeds: [embed], components: [createOkButton('clickup_button')] });
     } catch (error) {
         console.error('Erreur lors de la mise à jour:', error);
         await handleError(interaction, `Impossible de mettre à jour la clé API: ${error.message}`);

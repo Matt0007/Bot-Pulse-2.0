@@ -1,29 +1,14 @@
-import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, UserSelectMenuBuilder, ChannelType } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, UserSelectMenuBuilder, ChannelType } from 'discord.js';
 import { useGetAllResponsable } from '../../../hook/clickup/useGetAllResponsable.js';
 import prisma from '../../../utils/prisma.js';
 import { logAdminAction } from '../../../utils/history.js';
+import { createBackButton, createOkButton } from '../../common/buttons.js';
+import { createErrorEmbed, createInfoEmbed, createSuccessEmbed, createWarningEmbed } from '../../common/embeds.js';
 
 const tempSelections = new Map();
 
-// Fonctions utilitaires
-const createBackButton = (customId = 'responsable_button') => 
-    new ActionRowBuilder().addComponents(
-        new ButtonBuilder().setCustomId(customId).setLabel('Retour').setStyle(ButtonStyle.Secondary)
-    );
-
-const createOkButton = (customId = 'responsable_button') => 
-    new ActionRowBuilder().addComponents(
-        new ButtonBuilder().setCustomId(customId).setLabel('OK').setStyle(ButtonStyle.Success)
-    );
-
-const createErrorEmbed = (message) => 
-    new EmbedBuilder().setTitle('❌ Erreur').setDescription(message).setColor(0xFF0000);
-
 const handleError = async (interaction, message, customId = 'responsable_button') => {
-    await interaction.update({ 
-        embeds: [createErrorEmbed(message)], 
-        components: [createBackButton(customId)] 
-    });
+    await interaction.update({ embeds: [createErrorEmbed(message)], components: [createBackButton(customId)] });
 };
 
 export async function responsableAdd(interaction) {
@@ -48,16 +33,12 @@ export async function responsableAdd(interaction) {
                 value: r
             })));
         
-        const embed = new EmbedBuilder()
-            .setTitle('➕ Ajouter un responsable')
-            .setDescription('**Étape 1/2** : Sélectionnez un responsable ClickUp dans le menu ci-dessous\n\n*Vous pouvez ajouter des utilisateurs à un channel existant ou créer un nouveau channel.*')
-            .setColor(0x5865F2);
-        
+        const embed = createInfoEmbed('➕ Ajouter un responsable', '**Étape 1/2** : Sélectionnez un responsable ClickUp dans le menu ci-dessous\n\n*Vous pouvez ajouter des utilisateurs à un channel existant ou créer un nouveau channel.*');
         await interaction.update({ 
             embeds: [embed], 
             components: [
                 new ActionRowBuilder().addComponents(selectMenu),
-                createBackButton()
+                createBackButton('responsable_button')
             ] 
         });
     } catch (error) {
@@ -78,12 +59,7 @@ export async function responsableAddSelectClickUp(interaction) {
             .setMinValues(1)
             .setDisabled(true); // Désactiver temporairement
         
-        const embed = new EmbedBuilder()
-            .setTitle('➕ Ajouter un responsable')
-            .setDescription(`**Étape 2/2** : Sélectionnez les utilisateurs Discord pour le responsable **${responsableName}**`)
-            .addFields({ name: 'Responsable ClickUp sélectionné', value: responsableName, inline: false })
-            .setColor(0x5865F2);
-        
+        const embed = createInfoEmbed('➕ Ajouter un responsable', `**Étape 2/2** : Sélectionnez les utilisateurs Discord pour le responsable **${responsableName}**`).addFields({ name: 'Responsable ClickUp sélectionné', value: responsableName, inline: false });
         const buttons = new ActionRowBuilder().addComponents(
             new ButtonBuilder().setCustomId('responsable_add_back_step1').setLabel('← Précédent').setStyle(ButtonStyle.Secondary),
             new ButtonBuilder().setCustomId('responsable_add_cancel').setLabel('Annuler').setStyle(ButtonStyle.Danger)
@@ -158,25 +134,13 @@ export async function responsableAddSelectUsers(interaction) {
             include: { users: true }
         });
         
-        const embed = new EmbedBuilder()
-            .setTitle('📋 Récapitulatif')
-            .setDescription('Vérifiez les informations avant de valider')
+        const embed = createInfoEmbed('📋 Récapitulatif', 'Vérifiez les informations avant de valider')
             .addFields(
                 { name: 'Responsable ClickUp', value: tempData.responsableName, inline: false },
                 { name: `Utilisateurs Discord (${validMembers.length})`, value: usersList || 'Aucun', inline: false },
-                { 
-                    name: existing ? 'Channel existant' : 'Channel à créer', 
-                    value: existing ? `<#${existing.channelId}>` : channelName, 
-                    inline: false 
-                }
+                { name: existing ? 'Channel existant' : 'Channel à créer', value: existing ? `<#${existing.channelId}>` : channelName, inline: false }
             )
-            .setColor(0x5865F2)
-            .setFooter({ 
-                text: existing 
-                    ? 'Cliquez sur "Valider" pour ajouter les utilisateurs au channel existant' 
-                    : 'Cliquez sur "Valider" pour créer le channel et sauvegarder' 
-            });
-        
+            .setFooter({ text: existing ? 'Cliquez sur "Valider" pour ajouter les utilisateurs au channel existant' : 'Cliquez sur "Valider" pour créer le channel et sauvegarder' });
         const buttons = new ActionRowBuilder().addComponents(
             new ButtonBuilder().setCustomId('responsable_add_validate').setLabel('Valider').setStyle(ButtonStyle.Success),
             new ButtonBuilder().setCustomId('responsable_add_cancel').setLabel('Annuler').setStyle(ButtonStyle.Danger)
@@ -230,11 +194,8 @@ export async function responsableAddValidate(interaction) {
             const newUserIds = userIds.filter(id => !existingUserIds.has(id));
             
             if (newUserIds.length === 0) {
-                const embed = new EmbedBuilder()
-                    .setTitle('⚠️ Utilisateurs déjà ajoutés')
-                    .setDescription('Tous les utilisateurs sélectionnés sont déjà dans ce channel.')
-                    .setColor(0xFFA500);
-                await interaction.update({ embeds: [embed], components: [createOkButton()] });
+                const embed = createWarningEmbed('⚠️ Utilisateurs déjà ajoutés', 'Tous les utilisateurs sélectionnés sont déjà dans ce channel.');
+                await interaction.update({ embeds: [embed], components: [createOkButton('responsable_button')] });
                 tempSelections.delete(userId);
                 return;
             }
@@ -273,10 +234,7 @@ export async function responsableAddValidate(interaction) {
             const mentions = members.map(m => `<@${m.id}>`).join(' ');
             
             // Envoyer un message de bienvenue dans le channel
-            const welcomeEmbed = new EmbedBuilder()
-                .setTitle('👋 Bienvenue !')
-                .setDescription(`${mentions}\n\nVous avez été ajouté(e)(s) au channel du responsable **${responsableName}**.`)
-                .setColor(0x5865F2);
+            const welcomeEmbed = createInfoEmbed('👋 Bienvenue !', `${mentions}\n\nVous avez été ajouté(e)(s) au channel du responsable **${responsableName}**.`);
             await channel.send({ embeds: [welcomeEmbed] });
             
             tempSelections.delete(userId);
@@ -286,16 +244,12 @@ export async function responsableAddValidate(interaction) {
             const usersNames = members.map(m => m.displayName || m.user.username).join(', ');
             await logAdminAction(interaction.guild.id, interaction.user.id, userName, `Ajouter ${usersNames} a responsable ${responsableName}`);
             
-            const embed = new EmbedBuilder()
-                .setTitle('✅ Utilisateurs ajoutés')
-                .setDescription(`**${newUserIds.length}** utilisateur(s) ajouté(s) au channel du responsable **${responsableName}**.`)
+            const embed = createSuccessEmbed('✅ Utilisateurs ajoutés', `**${newUserIds.length}** utilisateur(s) ajouté(s) au channel du responsable **${responsableName}**.`)
                 .addFields(
                     { name: 'Channel', value: `<#${channel.id}>`, inline: false },
                     { name: `Nouveaux utilisateurs (${members.length})`, value: usersList, inline: false }
-                )
-                .setColor(0x00FF00);
-            
-            await interaction.update({ embeds: [embed], components: [createOkButton()] });
+                );
+            await interaction.update({ embeds: [embed], components: [createOkButton('responsable_button')] });
             return;
         }
         
@@ -319,11 +273,8 @@ export async function responsableAddValidate(interaction) {
         if (existingChannel) {
             const channelInDb = await prisma.guildResponsable.findUnique({ where: { channelId: existingChannel.id } });
             if (channelInDb) {
-                const embed = new EmbedBuilder()
-                    .setTitle('⚠️ Channel déjà utilisé')
-                    .setDescription(`Le channel <#${existingChannel.id}> est déjà associé à un autre responsable.`)
-                    .setColor(0xFFA500);
-                await interaction.update({ embeds: [embed], components: [createOkButton()] });
+                const embed = createWarningEmbed('⚠️ Channel déjà utilisé', `Le channel <#${existingChannel.id}> est déjà associé à un autre responsable.`);
+                await interaction.update({ embeds: [embed], components: [createOkButton('responsable_button')] });
                 tempSelections.delete(userId);
                 return;
             }
@@ -374,10 +325,7 @@ export async function responsableAddValidate(interaction) {
         const mentions = members.map(m => `<@${m.id}>`).join(' ');
         
         // Envoyer un message de bienvenue dans le channel
-        const welcomeEmbed = new EmbedBuilder()
-            .setTitle('👋 Bienvenue !')
-            .setDescription(`${mentions}\n\nVous avez été ajouté(e)(s) au channel du responsable **${responsableName}**.`)
-            .setColor(0x5865F2);
+        const welcomeEmbed = createInfoEmbed('👋 Bienvenue !', `${mentions}\n\nVous avez été ajouté(e)(s) au channel du responsable **${responsableName}**.`);
         await channel.send({ embeds: [welcomeEmbed] });
         
         tempSelections.delete(userId);
@@ -387,16 +335,12 @@ export async function responsableAddValidate(interaction) {
         const usersNames = members.map(m => m.displayName || m.user.username).join(', ');
         await logAdminAction(interaction.guild.id, interaction.user.id, userName, `Ajouter ${usersNames} a responsable ${responsableName}`);
         
-        const embed = new EmbedBuilder()
-            .setTitle('✅ Responsable ajouté')
-            .setDescription(`Le responsable **${responsableName}** a été configuré avec succès.`)
+        const embed = createSuccessEmbed('✅ Responsable ajouté', `Le responsable **${responsableName}** a été configuré avec succès.`)
             .addFields(
                 { name: existingChannel ? 'Channel utilisé' : 'Channel créé', value: `<#${channel.id}>`, inline: false },
                 { name: `Utilisateurs (${members.length})`, value: usersList, inline: false }
-            )
-            .setColor(0x00FF00);
-        
-        await interaction.update({ embeds: [embed], components: [createOkButton()] });
+            );
+        await interaction.update({ embeds: [embed], components: [createOkButton('responsable_button')] });
     } catch (error) {
         console.error('Erreur lors de la validation:', error);
         await handleError(interaction, `Impossible de créer le responsable: ${error.message}`);
@@ -411,9 +355,6 @@ export async function responsableAddBackStep1(interaction) {
 
 export async function responsableAddCancel(interaction) {
     tempSelections.delete(interaction.user.id);
-    const embed = new EmbedBuilder()
-        .setTitle('❌ Annulé')
-        .setDescription('L\'ajout du responsable a été annulé.')
-        .setColor(0xFFA500);
-    await interaction.update({ embeds: [embed], components: [createOkButton()] });
+    const embed = createWarningEmbed('❌ Annulé', 'L\'ajout du responsable a été annulé.');
+    await interaction.update({ embeds: [embed], components: [createOkButton('responsable_button')] });
 }
