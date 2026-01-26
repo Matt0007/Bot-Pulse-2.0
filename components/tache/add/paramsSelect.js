@@ -1,5 +1,6 @@
-import { EmbedBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } from 'discord.js';
+import { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } from 'discord.js';
 import { getClickUpApiKey, clickUpRequest } from '../../../utils/clickup.js';
+import { createErrorEmbed, createInfoEmbed } from '../../common/embeds.js';
 import { taskDataCache, updateRecap } from '../add.js';
 
 /**
@@ -77,22 +78,14 @@ export async function tacheAddParamsSelect(interaction) {
                         .setStyle(ButtonStyle.Secondary)
                 );
             
-            const tempEmbed = new EmbedBuilder()
-                .setTitle('📋 Sélection de la priorité')
-                .setDescription('Choisissez une priorité pour la tâche')
-                .setColor(0x5865F2);
-            
+            const tempEmbed = createInfoEmbed('📋 Sélection de la priorité', 'Choisissez une priorité pour la tâche');
             await interaction.update({ embeds: [tempEmbed], components: [selectRow, backButton] });
         } else if (selectedValue === 'category') {
             // Différer l'interaction immédiatement pour éviter l'expiration
             await interaction.deferUpdate();
             
             // Afficher immédiatement un message de chargement
-            const loadingEmbed = new EmbedBuilder()
-                .setTitle('📋 Sélection de la catégorie')
-                .setDescription('Chargement des catégories...')
-                .setColor(0x5865F2);
-            
+            const loadingEmbed = createInfoEmbed('📋 Sélection de la catégorie', 'Chargement des catégories...');
             await interaction.editReply({ embeds: [loadingEmbed], components: [] });
             
             try {
@@ -140,11 +133,7 @@ export async function tacheAddParamsSelect(interaction) {
             await interaction.deferUpdate();
             
             // Afficher immédiatement un message de chargement
-            const loadingEmbed = new EmbedBuilder()
-                .setTitle('📋 Modification de l\'emplacement')
-                .setDescription('Chargement des projets...')
-                .setColor(0x5865F2);
-            
+            const loadingEmbed = createInfoEmbed('📋 Modification de l\'emplacement', 'Chargement des projets...');
             await interaction.editReply({ embeds: [loadingEmbed], components: [] });
             
             try {
@@ -180,11 +169,7 @@ export async function tacheAddParamsSelect(interaction) {
                     );
                 
                 // Modifier le message avec editReply
-                const tempEmbed = new EmbedBuilder()
-                    .setTitle('📋 Modification de l\'emplacement')
-                    .setDescription('Sélectionnez un nouveau projet pour la tâche')
-                    .setColor(0x5865F2);
-                
+                const tempEmbed = createInfoEmbed('📋 Modification de l\'emplacement', 'Sélectionnez un nouveau projet pour la tâche');
                 await interaction.editReply({ embeds: [tempEmbed], components: [selectRow, backButton] });
             } catch (error) {
                 console.error('Erreur lors de la récupération des projets:', error);
@@ -212,10 +197,7 @@ async function displayCategoryPage(interaction, messageId, page, useUpdate = fal
     const taskData = taskDataCache.get(messageId);
     if (!taskData || !taskData.categories) {
         if (useUpdate) {
-            await interaction.update({ 
-                embeds: [new EmbedBuilder().setTitle('❌ Erreur').setDescription('Session expirée. Veuillez recommencer.').setColor(0xFF0000)], 
-                components: [] 
-            });
+            await interaction.update({ embeds: [createErrorEmbed('Session expirée. Veuillez recommencer.')], components: [] });
         } else {
             await updateRecap(interaction, messageId);
         }
@@ -274,11 +256,7 @@ async function displayCategoryPage(interaction, messageId, page, useUpdate = fal
     
     const buttonsRow = new ActionRowBuilder().addComponents(buttons);
     
-    const tempEmbed = new EmbedBuilder()
-        .setTitle('📋 Sélection de la catégorie')
-        .setDescription(`Choisissez une catégorie pour la tâche${totalPages > 1 ? `\n*Page ${page + 1} sur ${totalPages}*` : ''}`)
-        .setColor(0x5865F2);
-    
+    const tempEmbed = createInfoEmbed('📋 Sélection de la catégorie', `Choisissez une catégorie pour la tâche${totalPages > 1 ? `\n*Page ${page + 1} sur ${totalPages}*` : ''}`);
     // Utiliser interaction.update() si c'est une pagination, sinon éditer le message
     if (useUpdate) {
         await interaction.update({ embeds: [tempEmbed], components: [selectRow, buttonsRow] });
@@ -312,10 +290,7 @@ export async function tacheAddCategoryPagination(interaction) {
         
         const taskData = taskDataCache.get(messageId);
         if (!taskData || !taskData.categories) {
-            await interaction.update({ 
-                embeds: [new EmbedBuilder().setTitle('❌ Erreur').setDescription('Session expirée. Veuillez recommencer.').setColor(0xFF0000)], 
-                components: [] 
-            });
+            await interaction.update({ embeds: [createErrorEmbed('Session expirée. Veuillez recommencer.')], components: [] });
             return;
         }
         

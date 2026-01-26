@@ -1,5 +1,6 @@
-import { EmbedBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } from 'discord.js';
+import { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } from 'discord.js';
 import prisma from '../../utils/prisma.js';
+import { createErrorEmbed, createInfoEmbed, createWarningEmbed } from '../common/embeds.js';
 // Fonctions importées depuis les fichiers modulaires
 export { tacheAddModal, tacheAddModifyModal } from './add/modal.js';
 export { tacheAddParamsSelect } from './add/paramsSelect.js';
@@ -32,14 +33,7 @@ export async function tacheAdd(interaction) {
             const isOwner = interaction.guild.ownerId === interaction.user.id;
             
             if (!isUserInResponsable && !isAdmin && !isOwner) {
-                await interaction.reply({
-                    embeds: [new EmbedBuilder()
-                        .setTitle('❌ Accès refusé')
-                        .setDescription('Cette commande ne peut être utilisée que dans votre channel privé de responsable.')
-                        .setColor(0xFF0000)
-                    ],
-                    ephemeral: true
-                });
+                await interaction.reply({ embeds: [createErrorEmbed('Cette commande ne peut être utilisée que dans votre channel privé de responsable.')], ephemeral: true });
                 return;
             }
         }
@@ -50,14 +44,7 @@ export async function tacheAdd(interaction) {
         });
         
         if (!guildConfig?.selectedListId || !guildConfig?.selectedListName) {
-            await interaction.reply({
-                embeds: [new EmbedBuilder()
-                    .setTitle('❌ Liste d\'ajout non configurée')
-                    .setDescription('Vous devez d\'abord sélectionner une liste d\'ajout dans les paramètres (Paramètre > Liste d\'ajout).')
-                    .setColor(0xFF0000)
-                ],
-                ephemeral: true
-            });
+            await interaction.reply({ embeds: [createErrorEmbed('Vous devez d\'abord sélectionner une liste d\'ajout dans les paramètres (Paramètre > Liste d\'ajout).')], ephemeral: true });
             return;
         }
         
@@ -171,10 +158,7 @@ export async function updateRecap(interaction, messageId) {
     
     const description = buildRecapDescription(taskData, projectName, listName, responsableInfo);
     
-    const recapEmbed = new EmbedBuilder()
-        .setTitle('📋 Récapitulatif de la tâche')
-        .setDescription(description)
-        .setColor(0x5865F2);
+    const recapEmbed = createInfoEmbed('📋 Récapitulatif de la tâche', description);
     
     const selectMenu = new StringSelectMenuBuilder()
         .setCustomId(`tache_add_params_${messageId}`)
@@ -252,11 +236,7 @@ export async function tacheAddCancel(interaction) {
             }
         }
         
-        const cancelEmbed = new EmbedBuilder()
-            .setTitle('❌ Création annulée')
-            .setDescription(`La création de la tâche **${taskName}** a été annulée.`)
-            .setColor(0xFFA500);
-        
+        const cancelEmbed = createWarningEmbed('❌ Création annulée', `La création de la tâche **${taskName}** a été annulée.`);
         await interaction.update({ embeds: [cancelEmbed], components: [] });
     } catch (error) {
         console.error('Erreur lors de l\'annulation:', error);

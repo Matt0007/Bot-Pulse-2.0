@@ -1,4 +1,4 @@
-import { EmbedBuilder } from 'discord.js';
+import { createErrorEmbed, createInfoEmbed } from '../../common/embeds.js';
 import { taskDataCache, updateRecap } from '../add.js';
 
 /**
@@ -12,20 +12,10 @@ export async function tacheAddPrioritySelect(interaction) {
         
         const taskData = taskDataCache.get(messageId);
         if (!taskData) {
-            const errorEmbed = new EmbedBuilder()
-                .setTitle('❌ Erreur')
-                .setDescription('Session expirée. Veuillez recommencer.')
-                .setColor(0xFF0000);
-            await interaction.update({ embeds: [errorEmbed], components: [] });
+            await interaction.update({ embeds: [createErrorEmbed('Session expirée. Veuillez recommencer.')], components: [] });
             return;
         }
-        
-        // Afficher immédiatement un message de chargement
-        const loadingEmbed = new EmbedBuilder()
-            .setTitle('📋 Sélection de la priorité')
-            .setDescription('Mise à jour de la priorité...')
-            .setColor(0x5865F2);
-        
+        const loadingEmbed = createInfoEmbed('📋 Sélection de la priorité', 'Mise à jour de la priorité...');
         await interaction.update({ embeds: [loadingEmbed], components: [] });
         
         taskData.priority = priority;
@@ -46,15 +36,8 @@ export async function tacheAddPriorityBack(interaction) {
         const customId = interaction.customId;
         const messageId = customId.replace('tache_add_priority_back_', '');
         
-        // Afficher immédiatement un message de chargement
-        const loadingEmbed = new EmbedBuilder()
-            .setTitle('📋 Récapitulatif de la tâche')
-            .setDescription('Chargement...')
-            .setColor(0x5865F2);
-        
+        const loadingEmbed = createInfoEmbed('📋 Récapitulatif de la tâche', 'Chargement...');
         await interaction.update({ embeds: [loadingEmbed], components: [] });
-        
-        // Remettre le récapitulatif à jour
         await updateRecap(interaction, messageId);
     } catch (error) {
         console.error('Erreur lors du retour au récapitulatif (priorité):', error);
@@ -72,22 +55,11 @@ export async function tacheAddCategorySelect(interaction) {
         
         const taskData = taskDataCache.get(messageId);
         if (!taskData) {
-            const errorEmbed = new EmbedBuilder()
-                .setTitle('❌ Erreur')
-                .setDescription('Session expirée. Veuillez recommencer.')
-                .setColor(0xFF0000);
-            await interaction.update({ embeds: [errorEmbed], components: [] });
+            await interaction.update({ embeds: [createErrorEmbed('Session expirée. Veuillez recommencer.')], components: [] });
             return;
         }
-        
-        // Afficher immédiatement un message de chargement
-        const loadingEmbed = new EmbedBuilder()
-            .setTitle('📋 Sélection de la catégorie')
-            .setDescription('Mise à jour de la catégorie...')
-            .setColor(0x5865F2);
-        
+        const loadingEmbed = createInfoEmbed('📋 Sélection de la catégorie', 'Mise à jour de la catégorie...');
         await interaction.update({ embeds: [loadingEmbed], components: [] });
-        
         taskData.category = category;
         taskDataCache.set(messageId, taskData);
         
@@ -106,15 +78,8 @@ export async function tacheAddCategoryBack(interaction) {
         const customId = interaction.customId;
         const messageId = customId.replace('tache_add_category_back_', '');
         
-        // Afficher immédiatement un message de chargement
-        const loadingEmbed = new EmbedBuilder()
-            .setTitle('📋 Récapitulatif de la tâche')
-            .setDescription('Chargement...')
-            .setColor(0x5865F2);
-        
+        const loadingEmbed = createInfoEmbed('📋 Récapitulatif de la tâche', 'Chargement...');
         await interaction.update({ embeds: [loadingEmbed], components: [] });
-        
-        // Remettre le récapitulatif à jour
         await updateRecap(interaction, messageId);
     } catch (error) {
         console.error('Erreur lors du retour au récapitulatif (catégorie):', error);

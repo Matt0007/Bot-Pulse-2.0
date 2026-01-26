@@ -1,4 +1,5 @@
-import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+import { createInfoEmbed } from '../../common/embeds.js';
 import { getValidCache, replySessionExpired } from './cache.js';
 
 /**
@@ -33,10 +34,8 @@ export async function handleTacheSelect(interaction) {
             new ButtonBuilder().setCustomId(`tache-status-${selectedIndex}-acheve`).setLabel('Achevée').setStyle(ButtonStyle.Success).setDisabled(false)
         );
 
-        await interaction.reply({
-            embeds: [new EmbedBuilder().setTitle(`📋 **${selectedTask.nom}**`).setDescription(`${statutEmoji} **Statut :** ${selectedTask.statut}`).setColor(0x5865F2)],
-            components: [buttons]
-        });
+        const embed = createInfoEmbed(`📋 **${selectedTask.nom}**`, `${statutEmoji} **Statut :** ${selectedTask.statut}`);
+        await interaction.reply({ embeds: [embed], components: [buttons] });
 
     } catch (error) {
         console.error('Erreur lors de la sélection de la tâche:', error);

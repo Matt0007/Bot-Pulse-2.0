@@ -1,6 +1,6 @@
-import { EmbedBuilder } from 'discord.js';
 import prisma from '../../../utils/prisma.js';
 import { useAddTask } from '../../../hook/clickup/useAddTask.js';
+import { createErrorEmbed, createInfoEmbed, createSuccessEmbed } from '../../common/embeds.js';
 import { taskDataCache, buildRecapDescription } from '../add.js';
 
 /**
@@ -21,14 +21,7 @@ export async function tacheAddConfirm(interaction) {
         // Récupérer les données depuis le cache
         const taskData = taskDataCache.get(messageId);
         if (!taskData) {
-            await interaction.editReply({
-                embeds: [new EmbedBuilder()
-                    .setTitle('❌ Erreur')
-                    .setDescription('Session expirée. Veuillez recommencer.')
-                    .setColor(0xFF0000)
-                ],
-                components: []
-            });
+            await interaction.editReply({ embeds: [createErrorEmbed('Session expirée. Veuillez recommencer.')], components: [] });
             return;
         }
         
@@ -38,26 +31,11 @@ export async function tacheAddConfirm(interaction) {
         const projectName = taskData.projectName || 'Projet inconnu';
         
         if (!listId) {
-            await interaction.editReply({
-                embeds: [new EmbedBuilder()
-                    .setTitle('❌ Erreur')
-                    .setDescription('Aucune liste sélectionnée.')
-                    .setColor(0xFF0000)
-                ],
-                components: []
-            });
+            await interaction.editReply({ embeds: [createErrorEmbed('Aucune liste sélectionnée.')], components: [] });
             return;
         }
         
-        // Afficher un message de chargement
-        await interaction.editReply({
-            embeds: [new EmbedBuilder()
-                .setTitle('⏳ Création de la tâche...')
-                .setDescription('Veuillez patienter pendant la création de la tâche dans ClickUp.')
-                .setColor(0x5865F2)
-            ],
-            components: []
-        });
+        await interaction.editReply({ embeds: [createInfoEmbed('⏳ Création de la tâche...', 'Veuillez patienter pendant la création de la tâche dans ClickUp.')], components: [] });
         
         // Créer la tâche dans ClickUp avec tous les paramètres
         await useAddTask(
@@ -82,11 +60,7 @@ export async function tacheAddConfirm(interaction) {
         // Utiliser la même fonction que le récapitulatif pour construire la description
         const successDescription = buildRecapDescription(taskData, projectName, listName, responsableInfoText);
         
-        const successEmbed = new EmbedBuilder()
-            .setTitle('✅ Tâche créée avec succès')
-            .setDescription(successDescription)
-            .setColor(0x00FF00);
-        
+        const successEmbed = createSuccessEmbed('✅ Tâche créée avec succès', successDescription);
         // Nettoyer le cache
         taskDataCache.delete(messageId);
         
@@ -100,14 +74,6 @@ export async function tacheAddConfirm(interaction) {
         
         // Utiliser editReply puisque l'interaction a été différée
 
-            await interaction.editReply({
-                embeds: [new EmbedBuilder()
-                    .setTitle('❌ Erreur')
-                    .setDescription(errorMessage)
-                    .setColor(0xFF0000)
-                ],
-                components: []
-            });
-       
+        await interaction.editReply({ embeds: [createErrorEmbed(errorMessage)], components: [] });
     }
 }

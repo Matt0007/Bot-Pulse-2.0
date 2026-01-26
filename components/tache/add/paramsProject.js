@@ -1,6 +1,7 @@
-import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder } from 'discord.js';
 import { useGetAllProject } from '../../../hook/clickup/useGetAllProject.js';
 import { useGetAllLists } from '../../../hook/clickup/useGetAllLists.js';
+import { createErrorEmbed, createInfoEmbed } from '../../common/embeds.js';
 import { taskDataCache, updateRecap } from '../add.js';
 
 /**
@@ -17,20 +18,10 @@ export async function tacheAddLocationProjectSelect(interaction) {
         
         const taskData = taskDataCache.get(messageId);
         if (!taskData || !taskData.messageId) {
-            const errorEmbed = new EmbedBuilder()
-                .setTitle('❌ Erreur')
-                .setDescription('Session expirée. Veuillez recommencer.')
-                .setColor(0xFF0000);
-            await interaction.editReply({ embeds: [errorEmbed], components: [] });
+            await interaction.editReply({ embeds: [createErrorEmbed('Session expirée. Veuillez recommencer.')], components: [] });
             return;
         }
-        
-        // Afficher immédiatement un message de chargement
-        const loadingEmbed = new EmbedBuilder()
-            .setTitle('📋 Modification de l\'emplacement')
-            .setDescription('Chargement des listes...')
-            .setColor(0x5865F2);
-        
+        const loadingEmbed = createInfoEmbed('📋 Modification de l\'emplacement', 'Chargement des listes...');
         await interaction.editReply({ embeds: [loadingEmbed], components: [] });
         
         // Récupérer le nom du projet
@@ -83,24 +74,12 @@ export async function tacheAddLocationProjectSelect(interaction) {
                     .setStyle(ButtonStyle.Secondary)
             );
         
-        // Modifier le message avec editReply
-        const tempEmbed = new EmbedBuilder()
-            .setTitle('📋 Modification de l\'emplacement')
-            .setDescription(`**Projet sélectionné :** ${project.name}\n\nSélectionnez une liste dans le menu ci-dessous`)
-            .setColor(0x5865F2);
-        
+        const tempEmbed = createInfoEmbed('📋 Modification de l\'emplacement', `**Projet sélectionné :** ${project.name}\n\nSélectionnez une liste dans le menu ci-dessous`);
         await interaction.editReply({ embeds: [tempEmbed], components: [selectRow, backButton] });
     } catch (error) {
         console.error('Erreur lors de la sélection du projet:', error);
         try {
-            await interaction.editReply({
-                embeds: [new EmbedBuilder()
-                    .setTitle('❌ Erreur')
-                    .setDescription('Erreur lors de la sélection du projet. Veuillez réessayer.')
-                    .setColor(0xFF0000)
-                ],
-                components: []
-            });
+            await interaction.editReply({ embeds: [createErrorEmbed('Erreur lors de la sélection du projet. Veuillez réessayer.')], components: [] });
         } catch (replyError) {
             console.error('Erreur lors de la réponse:', replyError);
         }
@@ -124,20 +103,10 @@ export async function tacheAddLocationListSelect(interaction) {
         const taskData = taskDataCache.get(messageId);
         if (!taskData || !taskData.messageId) {
             console.error('TaskData non trouvé pour messageId:', messageId);
-            const errorEmbed = new EmbedBuilder()
-                .setTitle('❌ Erreur')
-                .setDescription('Session expirée. Veuillez recommencer.')
-                .setColor(0xFF0000);
-            await interaction.editReply({ embeds: [errorEmbed], components: [] });
+            await interaction.editReply({ embeds: [createErrorEmbed('Session expirée. Veuillez recommencer.')], components: [] });
             return;
         }
-        
-        // Afficher immédiatement un message de chargement
-        const loadingEmbed = new EmbedBuilder()
-            .setTitle('📋 Modification de l\'emplacement')
-            .setDescription('Mise à jour de l\'emplacement...')
-            .setColor(0x5865F2);
-        
+        const loadingEmbed = createInfoEmbed('📋 Modification de l\'emplacement', 'Mise à jour de l\'emplacement...');
         await interaction.editReply({ embeds: [loadingEmbed], components: [] });
         
         // Récupérer le projectId depuis le cache (stocké temporairement)
@@ -181,14 +150,7 @@ export async function tacheAddLocationListSelect(interaction) {
     } catch (error) {
         console.error('Erreur lors de la sélection de la liste:', error);
         try {
-            await interaction.editReply({
-                embeds: [new EmbedBuilder()
-                    .setTitle('❌ Erreur')
-                    .setDescription('Erreur lors de la sélection de la liste. Veuillez réessayer.')
-                    .setColor(0xFF0000)
-                ],
-                components: []
-            });
+            await interaction.editReply({ embeds: [createErrorEmbed('Erreur lors de la sélection de la liste. Veuillez réessayer.')], components: [] });
         } catch (replyError) {
             console.error('Erreur lors de la réponse:', replyError);
         }
@@ -208,22 +170,11 @@ export async function tacheAddLocationBack(interaction) {
         
         const taskData = taskDataCache.get(messageId);
         if (!taskData || !taskData.messageId) {
-            const errorEmbed = new EmbedBuilder()
-                .setTitle('❌ Erreur')
-                .setDescription('Session expirée. Veuillez recommencer.')
-                .setColor(0xFF0000);
-            await interaction.editReply({ embeds: [errorEmbed], components: [] });
+            await interaction.editReply({ embeds: [createErrorEmbed('Session expirée. Veuillez recommencer.')], components: [] });
             return;
         }
-        
-        // Si on a un tempProjectId, on est sur la sélection de liste, donc on revient à la sélection de projet
         if (taskData.tempProjectId) {
-            // Afficher immédiatement un message de chargement
-            const loadingEmbed = new EmbedBuilder()
-                .setTitle('📋 Modification de l\'emplacement')
-                .setDescription('Chargement des projets...')
-                .setColor(0x5865F2);
-            
+            const loadingEmbed = createInfoEmbed('📋 Modification de l\'emplacement', 'Chargement des projets...');
             await interaction.editReply({ embeds: [loadingEmbed], components: [] });
             
             // Supprimer le projectId temporaire
@@ -261,20 +212,10 @@ export async function tacheAddLocationBack(interaction) {
                         .setStyle(ButtonStyle.Secondary)
                 );
             
-            // Modifier le message avec editReply
-            const tempEmbed = new EmbedBuilder()
-                .setTitle('📋 Modification de l\'emplacement')
-                .setDescription('Sélectionnez un nouveau projet pour la tâche')
-                .setColor(0x5865F2);
-            
+            const tempEmbed = createInfoEmbed('📋 Modification de l\'emplacement', 'Sélectionnez un nouveau projet pour la tâche');
             await interaction.editReply({ embeds: [tempEmbed], components: [selectRow, backButton] });
         } else {
-            // Sinon, on est sur la sélection de projet, donc on revient au récapitulatif
-            const loadingEmbed = new EmbedBuilder()
-                .setTitle('📋 Récapitulatif de la tâche')
-                .setDescription('Chargement...')
-                .setColor(0x5865F2);
-            
+            const loadingEmbed = createInfoEmbed('📋 Récapitulatif de la tâche', 'Chargement...');
             await interaction.editReply({ embeds: [loadingEmbed], components: [] });
             
             // Remettre le récapitulatif à jour
@@ -283,13 +224,6 @@ export async function tacheAddLocationBack(interaction) {
     } catch (error) {
         console.error('Erreur lors du retour:', error);
         
-        await interaction.editReply({
-            embeds: [new EmbedBuilder()
-                .setTitle('❌ Erreur')
-                .setDescription('Erreur lors du retour. Veuillez réessayer.')
-                .setColor(0xFF0000)
-            ],
-            components: []
-        });
+        await interaction.editReply({ embeds: [createErrorEmbed('Erreur lors du retour. Veuillez réessayer.')], components: [] });
     }
 }

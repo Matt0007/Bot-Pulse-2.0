@@ -1,7 +1,7 @@
-import { EmbedBuilder } from 'discord.js';
 import { getClickUpApiKey, clickUpRequest } from '../../../utils/clickup.js';
 import { useGetTaskDetails } from '../../../hook/clickup/useGetTaskDetails.js';
-import { getValidCache, replySessionExpired, tasksCache } from './cache.js';
+import { createErrorEmbed, createInfoEmbed, createSuccessEmbed } from '../../common/embeds.js';
+import { getValidCache, tasksCache } from './cache.js';
 import { createTaskList, createTaskPaginationComponents, createFooterText } from './pagination.js';
 
 const COMPLETED_STATUSES = ['complete', 'closed', 'done', 'terminé', 'fait', 'terminée', 'complété', 'achevé', 'acheve', 'finished', 'resolved'];
@@ -106,10 +106,8 @@ async function updateListMessage(interaction, cachedData, tasks, updatedCache) {
         const tasksList = createTaskList(tasks, currentPage);
         const { components, totalPages: newTotalPages } = createTaskPaginationComponents(tasks, currentPage);
         const footerText = createFooterText(tasks, newTotalPages, currentPage);
-        await listMessage.edit({
-            embeds: [new EmbedBuilder().setTitle(`📋 Tâches de ${cachedData.responsableName}`).setDescription(tasksList).setFooter({ text: footerText }).setColor(0x5865F2)],
-            components: components.length > 0 ? components : undefined
-        });
+        const embed = createInfoEmbed(`📋 Tâches de ${cachedData.responsableName}`, tasksList).setFooter({ text: footerText });
+        await listMessage.edit({ embeds: [embed], components: components.length > 0 ? components : undefined });
     } catch (error) {
         console.error('Erreur lors de la mise à jour du message de la liste:', error);
     }
@@ -123,14 +121,7 @@ export async function handleTacheStatusChange(interaction) {
         const userId = interaction.user.id;
         const cachedData = getValidCache(userId);
         if (!cachedData) {
-            await interaction.editReply({ 
-                embeds: [new EmbedBuilder()
-                    .setTitle('❌ Session expirée')
-                    .setDescription('Le cache a expiré. Veuillez utiliser `/tache list` à nouveau.')
-                    .setColor(0xFF0000)
-                ],
-                components: []
-            });
+            await interaction.editReply({ embeds: [createErrorEmbed('Le cache a expiré. Veuillez utiliser `/tache list` à nouveau.')], components: [] });
             return;
         }
 
@@ -141,40 +132,18 @@ export async function handleTacheStatusChange(interaction) {
         const selectedTask = tasks[taskIndex];
 
         if (!selectedTask) {
-            await interaction.editReply({ 
-                embeds: [new EmbedBuilder()
-                    .setTitle('❌ Erreur')
-                    .setDescription('Tâche non trouvée.')
-                    .setColor(0xFF0000)
-                ],
-                components: []
-            });
+            await interaction.editReply({ embeds: [createErrorEmbed('Tâche non trouvée.')], components: [] });
             return;
         }
 
         const statusMap = { 'a-faire': 'À faire', 'en-cours': 'En cours', 'acheve': 'Achevée' };
         const newStatusName = statusMap[newStatusKey];
         if (!newStatusName) {
-            await interaction.editReply({ 
-                embeds: [new EmbedBuilder()
-                    .setTitle('❌ Erreur')
-                    .setDescription('Statut invalide.')
-                    .setColor(0xFF0000)
-                ],
-                components: []
-            });
+            await interaction.editReply({ embeds: [createErrorEmbed('Statut invalide.')], components: [] });
             return;
         }
 
-        // Afficher un message de chargement
-        await interaction.editReply({
-            embeds: [new EmbedBuilder()
-                .setTitle('⏳ Mise à jour du statut...')
-                .setDescription('Veuillez patienter pendant la mise à jour du statut dans ClickUp.')
-                .setColor(0x5865F2)
-            ],
-            components: []
-        });
+        await interaction.editReply({ embeds: [createInfoEmbed('⏳ Mise à jour du statut...', 'Veuillez patienter pendant la mise à jour du statut dans ClickUp.')], components: [] });
 
         const apiKey = await getClickUpApiKey(guildId);
 
@@ -184,11 +153,8 @@ export async function handleTacheStatusChange(interaction) {
             if (!areAllSubtasksCompleted(taskDetails)) {
                 const incomplete = await findIncompleteSubtasks(taskDetails, [], apiKey);
                 const statusToEmoji = (s) => { const v = (s || '').toLowerCase(); if (v.includes('cours') || v.includes('progress')) return '🟦'; return '⬜'; };
-                const embed = new EmbedBuilder()
-                    .setTitle('❌ Impossible de terminer cette tâche')
-                    .setDescription(`Les sous-tâches suivantes doivent être finies avant de marquer la tâche comme Achevée :\n\n${incomplete.map((st, i) => `${i + 1}. ${statusToEmoji(st.status)} - ${st.name} | ${st.responsable}`).join('\n')}\n\n⬜ - À faire | 🟦 - En cours`)
-                    .setColor(0xFF0000)
-                    .setFooter({ text: `${incomplete.length} sous-tâche${incomplete.length > 1 ? 's' : ''} à compléter` });
+                const desc = `Les sous-tâches suivantes doivent être finies avant de marquer la tâche comme Achevée :\n\n${incomplete.map((st, i) => `${i + 1}. ${statusToEmoji(st.status)} - ${st.name} | ${st.responsable}`).join('\n')}\n\n⬜ - À faire | 🟦 - En cours`;
+                const embed = createErrorEmbed(desc).setTitle('❌ Impossible de terminer cette tâche').setFooter({ text: `${incomplete.length} sous-tâche${incomplete.length > 1 ? 's' : ''} à compléter` });
                 await interaction.editReply({ embeds: [embed], components: [] });
                 return;
             }
@@ -203,20 +169,10 @@ export async function handleTacheStatusChange(interaction) {
         tasksCache.set(userId, updatedCache);
         await updateListMessage(interaction, cachedData, tasks, updatedCache);
 
-        await interaction.editReply({
-            content: null,
-            embeds: [new EmbedBuilder().setTitle('✅ Tâche mise à jour').setDescription(`La tâche **${selectedTask.nom}** a été mise à jour à **${newStatusName}**.`).setColor(0x00FF00)],
-            components: []
-        });
+        const successEmbed = createSuccessEmbed('✅ Tâche mise à jour', `La tâche **${selectedTask.nom}** a été mise à jour à **${newStatusName}**.`);
+        await interaction.editReply({ content: null, embeds: [successEmbed], components: [] });
     } catch (error) {
         console.error('Erreur lors du changement de statut:', error);
-        await interaction.editReply({ 
-            embeds: [new EmbedBuilder()
-                .setTitle('❌ Erreur')
-                .setDescription('Erreur lors du changement de statut. Veuillez réessayer.')
-                .setColor(0xFF0000)
-            ],
-            components: [] 
-        });
+        await interaction.editReply({ embeds: [createErrorEmbed('Erreur lors du changement de statut. Veuillez réessayer.')], components: [] });
     }
 }

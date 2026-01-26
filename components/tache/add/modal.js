@@ -1,5 +1,6 @@
-import { EmbedBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } from 'discord.js';
+import { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } from 'discord.js';
 import prisma from '../../../utils/prisma.js';
+import { createErrorEmbed, createInfoEmbed } from '../../common/embeds.js';
 import { taskDataCache, updateRecap, buildRecapDescription } from '../add.js';
 
 /**
@@ -40,13 +41,7 @@ export async function tacheAddModal(interaction) {
         const taskName = interaction.fields.getTextInputValue('tache_name').trim();
         
         if (!taskName) {
-            await interaction.editReply({
-                embeds: [new EmbedBuilder()
-                    .setTitle('❌ Erreur')
-                    .setDescription('Le nom de la tâche ne peut pas être vide.')
-                    .setColor(0xFF0000)
-                ]
-            });
+            await interaction.editReply({ embeds: [createErrorEmbed('Le nom de la tâche ne peut pas être vide.')] });
             return;
         }
         
@@ -56,13 +51,7 @@ export async function tacheAddModal(interaction) {
         });
         
         if (!guildConfig?.selectedListId) {
-            await interaction.editReply({
-                embeds: [new EmbedBuilder()
-                    .setTitle('❌ Erreur')
-                    .setDescription('Aucune liste d\'ajout configurée. Veuillez configurer une liste dans les paramètres.')
-                    .setColor(0xFF0000)
-                ]
-            });
+            await interaction.editReply({ embeds: [createErrorEmbed('Aucune liste d\'ajout configurée. Veuillez configurer une liste dans les paramètres.')] });
             return;
         }
         
@@ -107,11 +96,7 @@ export async function tacheAddModal(interaction) {
         };
         const description = buildRecapDescription(initialTaskData, projectName, listName, responsableInfo);
         
-        // Afficher le récapitulatif avec boutons Valider/Annuler et select menu
-        const recapEmbed = new EmbedBuilder()
-            .setTitle('📋 Récapitulatif de la tâche')
-            .setDescription(description)
-            .setColor(0x5865F2);
+        const recapEmbed = createInfoEmbed('📋 Récapitulatif de la tâche', description);
         
         // Select menu pour les paramètres supplémentaires
         const selectMenu = new StringSelectMenuBuilder()
@@ -173,13 +158,7 @@ export async function tacheAddModal(interaction) {
             ? error.message 
             : 'Impossible de créer la tâche dans ClickUp.';
         
-        await interaction.editReply({
-            embeds: [new EmbedBuilder()
-                .setTitle('❌ Erreur')
-                .setDescription(errorMessage)
-                .setColor(0xFF0000)
-            ]
-        });
+        await interaction.editReply({ embeds: [createErrorEmbed(errorMessage)] });
     }
 }
 
@@ -224,12 +203,6 @@ export async function tacheAddModifyModal(interaction) {
     } catch (error) {
         console.error('Erreur lors de la modification du nom:', error);
         
-        await interaction.editReply({
-            embeds: [new EmbedBuilder()
-                .setTitle('❌ Erreur')
-                .setDescription('Impossible de modifier le nom de la tâche.')
-                .setColor(0xFF0000)
-            ]
-        });
+        await interaction.editReply({ embeds: [createErrorEmbed('Impossible de modifier le nom de la tâche.')] });
     }
 }

@@ -1,9 +1,9 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, EmbedBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } from 'discord.js';
+import { createInfoEmbed } from '../../common/embeds.js';
 import { getValidCache, replySessionExpired, tasksCache } from './cache.js';
 
 const ITEMS_PER_PAGE = 25;
 const STATUS_EMOJIS = { A_FAIRE: '⬜', EN_COURS: '🟦' };
-const EMBED_COLORS = { TASK: 0x5865F2 };
 
 export function createTaskList(tasks, currentPage) {
     const startIndex = currentPage * ITEMS_PER_PAGE;
@@ -89,11 +89,7 @@ export function updateTaskPagination(tasks, newPage, responsableName) {
     const footerText = createFooterText(tasks, totalPages, newPage);
     
     return {
-        embed: new EmbedBuilder()
-            .setTitle(`📋 Tâches de ${responsableName}`)
-            .setDescription(tasksList)
-            .setFooter({ text: footerText })
-            .setColor(EMBED_COLORS.TASK),
+        embed: createInfoEmbed(`📋 Tâches de ${responsableName}`, tasksList).setFooter({ text: footerText }),
         components
     };
 }

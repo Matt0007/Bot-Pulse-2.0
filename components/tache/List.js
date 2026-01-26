@@ -1,14 +1,8 @@
-import { EmbedBuilder } from 'discord.js';
 import prisma from '../../utils/prisma.js';
 import { useGetAllTask } from '../../hook/clickup/useGetAllTask.js';
+import { createErrorEmbed, createInfoEmbed } from '../common/embeds.js';
 import { createTaskList, createTaskPaginationComponents, createFooterText } from './liste/pagination.js';
 import { tasksCache } from './liste/cache.js';
-
-// Couleurs des embeds Discord
-const EMBED_COLORS = {
-    ERROR: 0xFF0000,      // Rouge - Messages d'erreur
-    TASK: 0x5865F2,      // Bleu Discord - Listes de tâches
-};
 
 /**
  * Affiche la liste des tâches d'un responsable dans son channel
@@ -24,14 +18,7 @@ export async function tacheList(interaction) {
         });
         
         if (!responsable) {
-            const embed = new EmbedBuilder()
-                .setTitle('❌ Channel non associé')
-                .setDescription('Ce channel n\'est pas associé à un responsable. Utilisez le menu admin pour associer un responsable à ce channel.')
-                .setColor(EMBED_COLORS.ERROR);
-            
-            return await interaction.editReply({
-                embeds: [embed],
-            });
+            return await interaction.editReply({ embeds: [createErrorEmbed('Ce channel n\'est pas associé à un responsable. Utilisez le menu admin pour associer un responsable à ce channel.')] });
         }
         
         // Vérifier que l'utilisateur est bien associé à ce responsable (ou qu'il est admin)
@@ -41,14 +28,7 @@ export async function tacheList(interaction) {
         const isOwner = interaction.guild.ownerId === interaction.user.id;
         
         if (!isUserInResponsable && !isAdmin && !isOwner) {
-            const embed = new EmbedBuilder()
-                .setTitle('❌ Accès refusé')
-                .setDescription('Cette commande ne peut être utilisée que dans votre channel privé de responsable.')
-                .setColor(EMBED_COLORS.ERROR);
-            
-            return await interaction.editReply({
-                embeds: [embed],
-            });
+            return await interaction.editReply({ embeds: [createErrorEmbed('Cette commande ne peut être utilisée que dans votre channel privé de responsable.')] });
         }
 
         // Récupérer les projets configurés
@@ -57,14 +37,7 @@ export async function tacheList(interaction) {
         });
         
         if (projets.length === 0) {
-            const embed = new EmbedBuilder()
-                .setTitle('❌ Aucun projet configuré')
-                .setDescription('Aucun projet configuré. Un admin doit ajouter des projets.')
-                .setColor(EMBED_COLORS.ERROR);
-            
-            return await interaction.editReply({
-                embeds: [embed],
-            });
+            return await interaction.editReply({ embeds: [createErrorEmbed('Aucun projet configuré. Un admin doit ajouter des projets.')] });
         }
 
         // Extraire les IDs des projets configurés
@@ -98,13 +71,7 @@ export async function tacheList(interaction) {
         // Créer le footer
         const footerText = createFooterText(tasks, totalPages, currentPage);
 
-        // Créer l'embed
-        const embed = new EmbedBuilder()
-            .setTitle(`📋 Tâches de ${responsable.responsableName}`)
-            .setDescription(tasksList)
-            .setFooter({ text: footerText })
-            .setColor(EMBED_COLORS.TASK);
-
+        const embed = createInfoEmbed(`📋 Tâches de ${responsable.responsableName}`, tasksList).setFooter({ text: footerText });
         const message = await interaction.editReply({
             embeds: [embed],
             components: components.length > 0 ? components : undefined
@@ -119,13 +86,6 @@ export async function tacheList(interaction) {
 
     } catch (error) {
         console.error('Erreur lors de l\'exécution de la commande /tache list:', error);
-        const embed = new EmbedBuilder()
-            .setTitle('❌ Erreur')
-            .setDescription('Erreur lors de la récupération des tâches. Veuillez réessayer plus tard.')
-            .setColor(EMBED_COLORS.ERROR);
-        
-        await interaction.editReply({
-            embeds: [embed],
-        });
+        await interaction.editReply({ embeds: [createErrorEmbed('Erreur lors de la récupération des tâches. Veuillez réessayer plus tard.')] });
     }
 }
