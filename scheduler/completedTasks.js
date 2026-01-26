@@ -118,8 +118,6 @@ async function checkAndSendCompletedTasks(client) {
 
         const currentHour = parisTime.getHours();
         const currentMinute = parisTime.getMinutes();
-        
-        console.log(`[Scheduler Completed] Vérification à ${String(currentHour).padStart(2, '0')}:${String(currentMinute).padStart(2, '0')} (${timezone}) - ${guildConfigs.length} config(s) trouvée(s)`);
 
         for (const config of guildConfigs) {
             if (!config.completedHour) continue;
@@ -129,7 +127,6 @@ async function checkAndSendCompletedTasks(client) {
             
             // Vérifier si l'heure et la minute correspondent
             if (configHour !== currentHour || configMinute !== currentMinute) {
-                console.log(`[Scheduler Completed] Config guildId ${config.guildId}: ${config.completedHour} ≠ ${String(currentHour).padStart(2, '0')}:${String(currentMinute).padStart(2, '0')}`);
                 continue;
             }
             

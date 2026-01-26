@@ -1,4 +1,5 @@
-import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+import { createErrorEmbed, createInfoEmbed } from '../../common/embeds.js';
 import { adminAdd, adminAddSelect } from './add.js';
 import { adminRemove, adminRemoveSelect } from './remove.js';
 
@@ -9,24 +10,14 @@ export const adminHandlers = {
         
         let embed;
         if (!adminRole) {
-            embed = new EmbedBuilder()
-                .setTitle('🔧 Section Admin')
-                .setDescription('❌ Le rôle "Bot Pulse Admin" n\'existe pas.')
-                .setColor(0xFF0000);
+            embed = createErrorEmbed('Le rôle "Bot Pulse Admin" n\'existe pas.');
         } else {
             const members = adminRole.members.map(member => member.user);
             if (members.length === 0) {
-                embed = new EmbedBuilder()
-                    .setTitle('🔧 Section Admin')
-                    .setDescription('Aucun administrateur trouvé.')
-                    .setColor(0x5865F2);
+                embed = createInfoEmbed('🔧 Section Admin', 'Aucun administrateur trouvé.');
             } else {
                 const memberList = members.map((member, index) => `**${index + 1}.** ${member.displayName || member.username}`).join('\n');
-                embed = new EmbedBuilder()
-                    .setTitle('🔧 Section Admin')
-                    .setDescription(memberList)
-                    .setFooter({ text: `Total: ${members.length} administrateur(s)` })
-                    .setColor(0x5865F2);
+                embed = createInfoEmbed('🔧 Section Admin', memberList).setFooter({ text: `Total: ${members.length} administrateur(s)` });
             }
         }
         

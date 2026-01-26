@@ -100,8 +100,6 @@ async function checkAndSendMorningTasks(client) {
 
         const currentHour = parisTime.getHours();
         const currentMinute = parisTime.getMinutes();
-        
-        console.log(`[Scheduler Morning] Vérification à ${String(currentHour).padStart(2, '0')}:${String(currentMinute).padStart(2, '0')} (${timezone}) - ${guildConfigs.length} config(s) trouvée(s)`);
 
         for (const config of guildConfigs) {
             if (!config.morningHour) continue;
@@ -111,7 +109,6 @@ async function checkAndSendMorningTasks(client) {
             
             // Vérifier si l'heure et la minute correspondent
             if (configHour !== currentHour || configMinute !== currentMinute) {
-                console.log(`[Scheduler Morning] Config guildId ${config.guildId}: ${config.morningHour} ≠ ${String(currentHour).padStart(2, '0')}:${String(currentMinute).padStart(2, '0')}`);
                 continue;
             }
             

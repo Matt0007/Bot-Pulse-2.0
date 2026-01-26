@@ -1,5 +1,7 @@
-import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, UserSelectMenuBuilder } from 'discord.js';
+import { ActionRowBuilder, UserSelectMenuBuilder } from 'discord.js';
 import { logAdminAction } from '../../../utils/history.js';
+import { createBackButton, createOkButton } from '../../common/buttons.js';
+import { createErrorEmbed, createInfoEmbed, createSuccessEmbed, createWarningEmbed } from '../../common/embeds.js';
 
 export async function adminAdd(interaction) {
     const guild = interaction.guild;
@@ -7,11 +9,7 @@ export async function adminAdd(interaction) {
     
     if (!adminRole) {
         await interaction.update({
-            embeds: [new EmbedBuilder()
-                .setTitle('❌ Erreur')
-                .setDescription('Le rôle "Bot Pulse Admin" n\'existe pas.')
-                .setColor(0xFF0000)
-            ],
+            embeds: [createErrorEmbed('Le rôle "Bot Pulse Admin" n\'existe pas.')],
             components: []
         });
         return;
@@ -24,20 +22,10 @@ export async function adminAdd(interaction) {
         .setMinValues(1)
         .setDisabled(true); // Désactiver temporairement
     
-    const embed = new EmbedBuilder()
-        .setTitle('➕ Ajouter un administrateur')
-        .setDescription('Sélectionnez un utilisateur dans le menu ci-dessous')
-        .setColor(0x5865F2);
+    const embed = createInfoEmbed('➕ Ajouter un administrateur', 'Sélectionnez un utilisateur dans le menu ci-dessous');
     
     const row = new ActionRowBuilder().addComponents(userSelect);
-    const backButton = new ActionRowBuilder()
-        .addComponents(
-            new ButtonBuilder()
-                .setCustomId('admin_button')
-                .setLabel('Retour')
-                .setStyle(ButtonStyle.Secondary)
-        );
-    
+    const backButton = createBackButton('admin_button');
     const message = await interaction.update({ embeds: [embed], components: [row, backButton], fetchReply: true });
     
     // Réactiver le select menu après un court délai
@@ -68,50 +56,27 @@ export async function adminAddSelect(interaction) {
     
     // Vérifier que ce n'est pas un bot
     if (member.user.bot) {
-        const embed = new EmbedBuilder()
-            .setTitle('❌ Erreur')
-            .setDescription('Impossible d\'ajouter un bot au rôle admin.')
-            .setColor(0xFF0000);
-        
-        const backButton = new ActionRowBuilder()
-            .addComponents(
-                new ButtonBuilder()
-                    .setCustomId('admin_button')
-                    .setLabel('Retour')
-                    .setStyle(ButtonStyle.Secondary)
-            );
-        
-        await interaction.editReply({ embeds: [embed], components: [backButton] });
+        await interaction.editReply({
+            embeds: [createErrorEmbed('Impossible d\'ajouter un bot au rôle admin.')],
+            components: [createBackButton('admin_button')]
+        });
         return;
     }
     
     if (!adminRole) {
         await interaction.editReply({
-            embeds: [new EmbedBuilder()
-                .setTitle('❌ Erreur')
-                .setDescription('Le rôle "Bot Pulse Admin" n\'existe pas.')
-                .setColor(0xFF0000)
-            ],
+            embeds: [createErrorEmbed('Le rôle "Bot Pulse Admin" n\'existe pas.')],
             components: []
         });
         return;
     }
     
     if (member.roles.cache.has(adminRole.id)) {
-        const embed = new EmbedBuilder()
-            .setTitle('⚠️ Déjà administrateur')
-            .setDescription(`${member.displayName || member.user.username} a déjà le rôle admin.`)
-            .setColor(0xFFA500);
-        
-        const okButton = new ActionRowBuilder()
-            .addComponents(
-                new ButtonBuilder()
-                    .setCustomId('admin_button')
-                    .setLabel('OK')
-                    .setStyle(ButtonStyle.Success)
-            );
-        
-        await interaction.editReply({ embeds: [embed], components: [okButton] });
+        const embed = createWarningEmbed(
+            '⚠️ Déjà administrateur',
+            `${member.displayName || member.user.username} a déjà le rôle admin.`
+        );
+        await interaction.editReply({ embeds: [embed], components: [createOkButton('admin_button')] });
         return;
     }
     
@@ -122,34 +87,15 @@ export async function adminAddSelect(interaction) {
         const targetName = member.displayName || member.user.username;
         await logAdminAction(interaction.guild.id, interaction.user.id, userName, `Ajouter ${targetName} dans les admins`);
         
-        const embed = new EmbedBuilder()
-            .setTitle('✅ Administrateur ajouté')
-            .setDescription(`${targetName} a été ajouté au rôle "Bot Pulse Admin".`)
-            .setColor(0x00FF00);
-        
-        const okButton = new ActionRowBuilder()
-            .addComponents(
-                new ButtonBuilder()
-                    .setCustomId('admin_button')
-                    .setLabel('OK')
-                    .setStyle(ButtonStyle.Success)
-            );
-        
-        await interaction.editReply({ embeds: [embed], components: [okButton] });
+        const embed = createSuccessEmbed(
+            '✅ Administrateur ajouté',
+            `${targetName} a été ajouté au rôle "Bot Pulse Admin".`
+        );
+        await interaction.editReply({ embeds: [embed], components: [createOkButton('admin_button')] });
     } catch (error) {
-        const embed = new EmbedBuilder()
-            .setTitle('❌ Erreur')
-            .setDescription(`Impossible d'ajouter le rôle: ${error.message}`)
-            .setColor(0xFF0000);
-        
-        const backButton = new ActionRowBuilder()
-            .addComponents(
-                new ButtonBuilder()
-                    .setCustomId('admin_button')
-                    .setLabel('Retour')
-                    .setStyle(ButtonStyle.Secondary)
-            );
-        
-        await interaction.editReply({ embeds: [embed], components: [backButton] });
+        await interaction.editReply({
+            embeds: [createErrorEmbed(`Impossible d'ajouter le rôle: ${error.message}`)],
+            components: [createBackButton('admin_button')]
+        });
     }
 }
