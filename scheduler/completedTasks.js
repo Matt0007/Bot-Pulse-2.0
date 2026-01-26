@@ -105,12 +105,6 @@ async function checkAndSendCompletedTasks(client) {
         
         // Convertir en heure locale Europe/Paris
         const parisTime = new Date(now.toLocaleString('en-US', { timeZone: timezone }));
-        const dayOfWeek = parisTime.getDay();
-        
-        if (dayOfWeek === 0 || dayOfWeek === 6) {
-            console.log(`[Scheduler Completed] Week-end détecté (jour ${dayOfWeek}), pas d'envoi`);
-            return;
-        }
 
         const guildConfigs = await prisma.guildConfig.findMany({
             where: { completedHour: { not: null }, clickupApiKey: { not: null } }
@@ -153,12 +147,12 @@ async function checkAndSendCompletedTasks(client) {
 
 export function startCompletedTasksScheduler(client) {
     const timezone = process.env.TZ || 'Europe/Paris';
-    // Scheduler qui s'exécute toutes les minutes (lundi à vendredi) pour vérifier l'heure exacte
-    cron.schedule('* * * * 1-5', () => checkAndSendCompletedTasks(client), {
+    // Scheduler qui s'exécute toutes les minutes pour vérifier l'heure exacte (tous les jours)
+    cron.schedule('* * * * *', () => checkAndSendCompletedTasks(client), {
         scheduled: true,
         timezone: timezone
     });
-    console.log(`✅ Scheduler des tâches complétées démarré (lundi à vendredi uniquement, vérification chaque minute, timezone: ${timezone})`);
+    console.log(`✅ Scheduler des tâches complétées démarré (tous les jours, vérification chaque minute, timezone: ${timezone})`);
 }
 
 export async function handleCompletedTasksPagination(interaction) {
