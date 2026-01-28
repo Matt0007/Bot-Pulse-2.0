@@ -21,4 +21,4 @@ jobs:
 
       - name: Deploy to VM
         run: |
-          ssh gestionsportcontact@<IP_DE_TA_VM> "bash /var/www/bot-pulse/deploy.sh"
+          ssh gestionsportcontact@34.155.82.241 "bash /var/www/bot-pulse/deploy.sh"
