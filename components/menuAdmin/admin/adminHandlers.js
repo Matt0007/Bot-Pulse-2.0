@@ -48,19 +48,21 @@ export const adminHandlers = {
     admin_remove_button: adminRemove,
     admin_remove_user_select: adminRemoveSelect,
     admin_crash_button: async (interaction) => {
-        // Bouton de test pour forcer un crash du process
+        // Bouton de test pour provoquer une VRAIE erreur non catchée
         if (interaction.isRepliable() && !interaction.replied && !interaction.deferred) {
             await interaction.reply({
-                content: '💥 Crash de test demandé. Le bot va se fermer (si la VM est bien configurée, il sera relancé).',
+                content: '💥 Crash de test demandé. Une erreur non gérée va être levée pour stopper le bot.',
                 ephemeral: true
             });
         }
 
-        // Laisser un petit délai pour que la réponse parte avant de tuer le process
+        // Petit délai pour laisser partir la réponse, puis on génère
+        // une exception non gérée hors de la chaîne async/await.
         setTimeout(() => {
-            // Utiliser process.exit pour s'assurer que le bot s\'arrête vraiment,
-            // même si les erreurs sont catchées ailleurs.
-            process.exit(1);
+            // Cette erreur n'est pas dans un try/catch et ne passe pas
+            // par les blocs await/try de index.js → elle doit faire
+            // tomber le process Node (uncaughtException).
+            throw new Error('Crash de test déclenché depuis /admin (admin_crash_button)');
         }, 1000);
     }
 };
