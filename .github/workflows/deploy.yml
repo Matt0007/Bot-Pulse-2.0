@@ -1,0 +1,34 @@
+name: Deploy to VM
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            cd /var/www/bot-pulse
+
+            echo "Pulling latest version..."
+            git pull
+
+            echo "Installing dependencies..."
+            npm install --production
+
+            echo "Generating Prisma client..."
+            npx prisma generate
+
+            echo "Restarting PM2 app..."
+            pm2 restart bot-pulse
