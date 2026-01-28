@@ -3,7 +3,7 @@ import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, But
 export function AdminMenuButton(userName) {
     const embed = new EmbedBuilder()
         .setTitle('👋 Bienvenue dans le panneau admin')
-        .setDescription(`Bonjour ${userName} !\nQue puis-je faire pour vous ?`)
+        .setDescription(`Bonjour Mr ${userName} !\nQue puis-je faire pour vous ?`)
         .setColor(0x5865F2);
     
     const row = new ActionRowBuilder()
