@@ -1,4 +1,4 @@
-name: Deploy to VM
+name: Deploy Bot
 
 on:
   push:
@@ -12,23 +12,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.SERVER_IP }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          script: |
-            cd /var/www/bot-pulse
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          echo -e "Host *\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
 
-            echo "Pulling latest version..."
-            git pull
-
-            echo "Installing dependencies..."
-            npm install --production
-
-            echo "Generating Prisma client..."
-            npx prisma generate
-
-            echo "Restarting PM2 app..."
-            pm2 restart bot-pulse
+      - name: Deploy to VM
+        run: |
+          ssh gestionsportcontact@<IP_DE_TA_VM> "bash /var/www/bot-pulse/deploy.sh"
