@@ -7,7 +7,8 @@ import { listSelectionButton, listSelectionModify, listSelectionProjectSelect, l
 
 export const parametreHandlers = {
     parametre_button: async (interaction) => {
-        const embed = createInfoEmbed('⚙️ Section Paramètre', 'Gestion des paramètres');
+        const embed = createInfoEmbed('⚙️ Section Paramètre', 'Gestion des paramètres')
+            .setFooter({ text: 'v2.4' });
         const buttons = new ActionRowBuilder()
             .addComponents(
                 new ButtonBuilder()
