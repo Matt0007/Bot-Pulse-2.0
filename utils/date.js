@@ -31,3 +31,14 @@ export function getTodayParisTimestamp() {
     const parisMidnight = utcMidnight - parisHour * 3600 * 1000;
     return parisMidnight;
 }
+
+/**
+ * Retourne le timestamp (ms) de minuit (00:00) demain en heure de Paris.
+ * Utilisé pour le filtre liste : afficher les tâches dont la date de début est aujourd'hui ou avant.
+ * @returns {number} Timestamp en millisecondes (UTC)
+ */
+export function getTomorrowParisTimestamp() {
+    const todayParis = getTodayParisTimestamp();
+    const oneDayMs = 24 * 60 * 60 * 1000;
+    return todayParis + oneDayMs;
+}
