@@ -51,7 +51,7 @@ function processTask(task, allTasks, responsableName, isSubtask = false, listId 
             statusName: task.status?.status
         });
     }
-
+ 
     // Traiter les sous-tâches si elles existent
     if (task.subtasks && Array.isArray(task.subtasks)) {
         for (const subtask of task.subtasks) {
