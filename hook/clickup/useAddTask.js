@@ -23,10 +23,11 @@ export async function useAddTask(guildId, listId, taskName, responsableName = nu
         };
         
         // Ajouter les dates si fournies (ClickUp attend des timestamps en millisecondes)
-        if (dueDate) {
+        const validTimestamp = (ts) => typeof ts === 'number' && Number.isFinite(ts) && ts > 0;
+        if (validTimestamp(dueDate)) {
             taskData.due_date = dueDate;
         }
-        if (startDate) {
+        if (validTimestamp(startDate)) {
             taskData.start_date = startDate;
         }
         

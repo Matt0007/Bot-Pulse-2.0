@@ -1,34 +1,8 @@
 import { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } from 'discord.js';
 import prisma from '../../../utils/prisma.js';
+import { getTodayParisTimestamp } from '../../../utils/date.js';
 import { createErrorEmbed, createInfoEmbed } from '../../common/embeds.js';
 import { taskDataCache, updateRecap, buildRecapDescription } from '../add.js';
-
-/**
- * Obtient la date d'aujourd'hui en heure de Paris (minuit)
- * @returns {number} Timestamp en millisecondes
- */
-function getTodayParisTimestamp() {
-    // Obtenir la date actuelle en heure de Paris
-    const now = new Date();
-    
-    // Obtenir les composants de date en heure de Paris
-    const parisDateParts = now.toLocaleString('fr-FR', { 
-        timeZone: 'Europe/Paris',
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit'
-    }).split('/');
-    
-    const day = parseInt(parisDateParts[0]);
-    const month = parseInt(parisDateParts[1]) - 1; // Les mois commencent à 0
-    const year = parseInt(parisDateParts[2]);
-    
-    // Créer une date locale avec ces valeurs à minuit
-    const todayParis = new Date(year, month, day, 0, 0, 0, 0);
-    
-    // Retourner le timestamp
-    return todayParis.getTime();
-}
 
 /**
  * Traite la soumission du modal initial et crée le récapitulatif

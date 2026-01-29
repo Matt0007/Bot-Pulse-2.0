@@ -44,19 +44,16 @@ export async function tacheAddDateModal(interaction) {
             return;
         }
         
-        const day = parseInt(dateParts[0]);
-        const month = parseInt(dateParts[1]) - 1; // Les mois commencent à 0
-        const year = parseInt(dateParts[2]);
-        
-        const date = new Date(year, month, day);
-        if (isNaN(date.getTime())) {
+        const day = parseInt(dateParts[0], 10);
+        const month = parseInt(dateParts[1], 10) - 1; // Les mois commencent à 0
+        const year = parseInt(dateParts[2], 10);
+
+        // Minuit UTC pour ce jour : même date partout (Paris, Indonésie, etc.)
+        const timestamp = Date.UTC(year, month, day, 0, 0, 0, 0);
+        if (Number.isNaN(timestamp) || timestamp < 0) {
             await interaction.editReply({ content: '❌ Date invalide' });
             return;
         }
-        
-        // Convertir en timestamp (millisecondes) - s'assurer que l'heure est à minuit
-        date.setHours(0, 0, 0, 0);
-        const timestamp = date.getTime();
         
         // S'assurer qu'on ne perd pas les autres données
         const updatedTaskData = {

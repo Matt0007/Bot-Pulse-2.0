@@ -1,4 +1,5 @@
 import { getClickUpApiKey, clickUpRequest } from '../../utils/clickup.js';
+import { getTodayParisTimestamp } from '../../utils/date.js';
 
 /**
  * Fonction helper pour traiter une tâche et ses sous-tâches
@@ -22,14 +23,12 @@ function processTask(task, allTasks, responsableName, isSubtask = false, listId 
     if (responsable && responsable.toUpperCase() === responsableName.toUpperCase() && 
         (statut.includes('faire') || statut.includes('en cours'))) {
         
-        // Vérifier la date de début : ne pas afficher si la date de début est dans le futur
+        // Ne pas afficher si la date de début est après "aujourd'hui" (Paris)
+        // Même référence que l'ajout de tâche : cohérent Indonésie / Paris (ex: 29/01 1h ID = 28/01 18h Paris → tâche pour "aujourd'hui" Paris → visible)
         if (task.start_date) {
-            const startDate = new Date(Number(task.start_date));
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            startDate.setHours(0, 0, 0, 0);
-            
-            if (!isNaN(startDate.getTime()) && startDate > today) {
+            const startTs = Number(task.start_date);
+            const todayParis = getTodayParisTimestamp();
+            if (Number.isFinite(startTs) && startTs > todayParis) {
                 return; // Ne pas ajouter cette tâche
             }
         }
