@@ -32,7 +32,7 @@ export const parametreHandlers = {
                     .setLabel('Retour')
                     .setStyle(ButtonStyle.Secondary)
             );
-        
+         
         await interaction.update({ embeds: [embed], components: [buttons] });
     },
     clickup_button: clickupButton,
