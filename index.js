@@ -8,7 +8,7 @@ import { initializeGuild } from './utils/GuildInit.js';
 import { handleButton } from './components/menuAdmin/menuAdminHandlers.js';
 import { handleTachePagination } from './components/tache/liste/pagination.js';
 import { handleTacheSelect, handleTacheStatusChange } from './components/tache/liste/index.js';
-import { tacheAddModal, tacheAddConfirm, tacheAddCancel, tacheAddModifyModal, tacheAddParamsSelect, tacheAddDateModal, tacheAddPrioritySelect, tacheAddPriorityBack, tacheAddCategorySelect, tacheAddCategoryBack, tacheAddLocationProjectSelect, tacheAddLocationListSelect, tacheAddLocationBack } from './components/tache/add.js';
+import { tacheAddModal, tacheAddConfirm, tacheAddConfirmBack, tacheAddConfirmFinal, tacheAddConfirmCategorySelect, tacheAddCancel, tacheAddModifyModal, tacheAddParamsSelect, tacheAddDateModal, tacheAddPrioritySelect, tacheAddPriorityBack, tacheAddCategorySelect, tacheAddCategoryBack, tacheAddLocationProjectSelect, tacheAddLocationListSelect, tacheAddLocationBack } from './components/tache/add.js';
 import { tacheAddCategoryPagination } from './components/tache/add/paramsSelect.js';
 import { startCompletedTasksScheduler, handleCompletedTasksPagination } from './scheduler/completedTasks.js';
 import { startMorningTasksScheduler, handleMorningTasksPagination } from './scheduler/morningTasks.js';
@@ -142,6 +142,10 @@ client.on('interactionCreate', async interaction => {
                 await handleCompletedTasksPagination(interaction);
             } else if (interaction.customId.startsWith('tache-status-')) {
                 await handleTacheStatusChange(interaction);
+            } else if (interaction.customId.startsWith('tache_add_confirm_final_')) {
+                await tacheAddConfirmFinal(interaction);
+            } else if (interaction.customId.startsWith('tache_add_confirm_back_')) {
+                await tacheAddConfirmBack(interaction);
             } else if (interaction.customId.startsWith('tache_add_confirm_')) {
                 await tacheAddConfirm(interaction);
             } else if (interaction.customId === 'tache_add_cancel') {
@@ -172,6 +176,8 @@ client.on('interactionCreate', async interaction => {
                 await tacheAddParamsSelect(interaction);
             } else if (interaction.customId.startsWith('tache_add_priority_select_')) {
                 await tacheAddPrioritySelect(interaction);
+            } else if (interaction.customId.startsWith('tache_add_confirm_category_select_')) {
+                await tacheAddConfirmCategorySelect(interaction);
             } else if (interaction.customId.startsWith('tache_add_category_select_')) {
                 await tacheAddCategorySelect(interaction);
             } else if (interaction.customId.startsWith('tache_add_location_project_')) {

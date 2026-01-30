@@ -61,6 +61,7 @@ export async function tacheAddCategorySelect(interaction) {
         const loadingEmbed = createInfoEmbed('📋 Sélection de la catégorie', 'Mise à jour de la catégorie...');
         await interaction.update({ embeds: [loadingEmbed], components: [] });
         taskData.category = category;
+        taskData.initialCategoryStep = false;
         taskDataCache.set(messageId, taskData);
         
         // Remettre le récapitulatif à jour

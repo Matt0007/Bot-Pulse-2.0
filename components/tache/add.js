@@ -7,7 +7,7 @@ export { tacheAddParamsSelect } from './add/paramsSelect.js';
 export { tacheAddDateModal } from './add/paramsDate.js';
 export { tacheAddLocationProjectSelect, tacheAddLocationListSelect, tacheAddLocationBack } from './add/paramsProject.js';
 export { tacheAddPrioritySelect, tacheAddPriorityBack, tacheAddCategorySelect, tacheAddCategoryBack } from './add/paramsPriorityCategory.js';
-export { tacheAddConfirm } from './add/confirm.js';
+export { tacheAddConfirm, tacheAddConfirmBack, tacheAddConfirmFinal, tacheAddConfirmCategorySelect } from './add/confirm.js';
 
 // Cache temporaire pour stocker les données de la tâche en cours de création
 export const taskDataCache = new Map();
