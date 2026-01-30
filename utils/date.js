@@ -42,3 +42,18 @@ export function getTomorrowParisTimestamp() {
     const oneDayMs = 24 * 60 * 60 * 1000;
     return todayParis + oneDayMs;
 }
+
+/**
+ * Retourne le timestamp (ms) de minuit (00:00) du lundi de la semaine en cours en heure de Paris.
+ * Utilisé pour les stats "tâches complétées cette semaine".
+ * @returns {number} Timestamp en millisecondes (UTC)
+ */
+export function getStartOfWeekParisTimestamp() {
+    const todayParis = getTodayParisTimestamp();
+    const parisDate = new Date(todayParis);
+    const dayOfWeek = parisDate.toLocaleString('en-GB', { timeZone: 'Europe/Paris', weekday: 'short' });
+    const dayMap = { Mon: 0, Tue: 1, Wed: 2, Thu: 3, Fri: 4, Sat: 5, Sun: 6 };
+    const daysSinceMonday = dayMap[dayOfWeek] ?? 0;
+    const oneDayMs = 24 * 60 * 60 * 1000;
+    return todayParis - daysSinceMonday * oneDayMs;
+}

@@ -12,6 +12,7 @@ import { tacheAddModal, tacheAddConfirm, tacheAddConfirmBack, tacheAddConfirmFin
 import { tacheAddCategoryPagination } from './components/tache/add/paramsSelect.js';
 import { startCompletedTasksScheduler, handleCompletedTasksPagination } from './scheduler/completedTasks.js';
 import { startMorningTasksScheduler, handleMorningTasksPagination } from './scheduler/morningTasks.js';
+import { startFridayStatsScheduler } from './scheduler/fridayStats.js';
 
 dotenv.config();
 
@@ -51,6 +52,7 @@ client.once('ready', () => {
     // Démarrer les schedulers
     startCompletedTasksScheduler(client);
     startMorningTasksScheduler(client);
+    startFridayStatsScheduler(client);
 });
 
 // Gestionnaire d'erreur global pour capturer les erreurs non gérées
@@ -217,13 +219,15 @@ client.on('interactionCreate', async interaction => {
                 console.error('Erreur lors du traitement du modal de date:', error);
                 await replyErrorIfRepliable(interaction);
             }
-        } else if (interaction.customId === 'hour_morning_modal' || interaction.customId === 'hour_completed_modal') {
+        } else if (interaction.customId === 'hour_morning_modal' || interaction.customId === 'hour_completed_modal' || interaction.customId === 'hour_friday_stats_modal') {
             try {
                 const { hourHandlers } = await import('./components/menuAdmin/hour/hourHandlers.js');
                 if (interaction.customId === 'hour_morning_modal') {
                     await hourHandlers.hour_morning_modal(interaction);
-                } else {
+                } else if (interaction.customId === 'hour_completed_modal') {
                     await hourHandlers.hour_completed_modal(interaction);
+                } else {
+                    await hourHandlers.hour_friday_stats_modal(interaction);
                 }
             } catch (error) {
                 console.error('Erreur lors du traitement du modal d\'heure:', error);

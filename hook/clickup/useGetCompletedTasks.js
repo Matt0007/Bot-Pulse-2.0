@@ -24,8 +24,9 @@ function isToday(timestamp) {
 
 /**
  * Fonction helper pour traiter une tâche complétée et ses sous-tâches
+ * @param {object} options - { sinceTimestamp?: number } si fourni, inclut les tâches fermées >= sinceTimestamp ; sinon uniquement aujourd'hui
  */
-function processCompletedTask(task, allTasks, responsableName, closedStatusIds, isSubtask = false, addedTaskIds = new Set()) {
+function processCompletedTask(task, allTasks, responsableName, closedStatusIds, isSubtask = false, addedTaskIds = new Set(), sinceTimestamp = null) {
     const responsableField = task.custom_fields?.find(f => normalizeName(f.name) === 'responsable');
     const responsable = responsableField && responsableField.value !== undefined 
         ? responsableField.type_config?.options?.[responsableField.value]?.name 
@@ -40,18 +41,20 @@ function processCompletedTask(task, allTasks, responsableName, closedStatusIds, 
         // Traiter quand même les sous-tâches
         if (task.subtasks && Array.isArray(task.subtasks)) {
             for (const subtask of task.subtasks) {
-                processCompletedTask(subtask, allTasks, responsableName, closedStatusIds, true, addedTaskIds);
+                processCompletedTask(subtask, allTasks, responsableName, closedStatusIds, true, addedTaskIds, sinceTimestamp);
             }
         }
         return;
     }
     
-    const closedToday = isToday(task.date_closed);
+    const closedInRange = sinceTimestamp != null
+        ? Number(task.date_closed) >= sinceTimestamp
+        : isToday(task.date_closed);
     const isResponsableMatch = normalizeName(responsable || '') === normalizeName(responsableName);
     const isActuallySubtask = isSubtask || !!task.parent;
     
-    // Ajouter la tâche si elle est fermée, fermée aujourd'hui, et correspond au responsable
-    if (isClosed && closedToday && isResponsableMatch && !addedTaskIds.has(task.id)) {
+    // Ajouter la tâche si elle est fermée, dans la période (aujourd'hui ou depuis sinceTimestamp), et correspond au responsable
+    if (isClosed && closedInRange && isResponsableMatch && !addedTaskIds.has(task.id)) {
         allTasks.push({
             id: task.id,
             nom: task.name,
@@ -69,19 +72,20 @@ function processCompletedTask(task, allTasks, responsableName, closedStatusIds, 
     // Traiter les sous-tâches si elles existent
     if (task.subtasks && Array.isArray(task.subtasks)) {
         for (const subtask of task.subtasks) {
-            processCompletedTask(subtask, allTasks, responsableName, closedStatusIds, true, addedTaskIds);
+            processCompletedTask(subtask, allTasks, responsableName, closedStatusIds, true, addedTaskIds, sinceTimestamp);
         }
     }
 }
 
 /**
- * Hook pour récupérer toutes les tâches complétées de la journée d'un responsable depuis ClickUp
+ * Hook pour récupérer toutes les tâches complétées d'un responsable depuis ClickUp
  * @param {string} guildId - ID du serveur Discord
  * @param {string} responsableName - Nom du responsable dans ClickUp
  * @param {Array<string>} configuredProjectIds - Liste des IDs de projets (spaces) configurés
- * @returns {Promise<Array>} - Liste des tâches complétées du responsable aujourd'hui
+ * @param {{ sinceTimestamp?: number }} [options] - Si sinceTimestamp est fourni, retourne les tâches fermées depuis cette date (ex. début de semaine)
+ * @returns {Promise<Array>} - Liste des tâches complétées (aujourd'hui par défaut, ou depuis sinceTimestamp)
  */
-export async function useGetCompletedTasks(guildId, responsableName, configuredProjectIds) {
+export async function useGetCompletedTasks(guildId, responsableName, configuredProjectIds, options = {}) {
     try {
         // Si aucun projet n'est configuré, retourner une liste vide
         if (!configuredProjectIds || configuredProjectIds.length === 0) {
@@ -89,6 +93,7 @@ export async function useGetCompletedTasks(guildId, responsableName, configuredP
         }
 
         const apiKey = await getClickUpApiKey(guildId);
+        const { sinceTimestamp = null } = options;
         const allTasks = [];
         const closedStatusIds = new Set();
         const addedTaskIds = new Set();
@@ -150,7 +155,7 @@ export async function useGetCompletedTasks(guildId, responsableName, configuredP
                             const tasks = tasksData.tasks || [];
 
                             for (const task of tasks) {
-                                processCompletedTask(task, allTasks, responsableName, closedStatusIds, false, addedTaskIds);
+                                processCompletedTask(task, allTasks, responsableName, closedStatusIds, false, addedTaskIds, sinceTimestamp);
                             }
                         } catch (error) {
                             console.error(`Erreur lors de la récupération des tâches complétées de la liste ${list.id}:`, error.message);
@@ -168,7 +173,7 @@ export async function useGetCompletedTasks(guildId, responsableName, configuredP
                         const tasks = tasksData.tasks || [];
 
                         for (const task of tasks) {
-                            processCompletedTask(task, allTasks, responsableName, closedStatusIds, false, addedTaskIds);
+                            processCompletedTask(task, allTasks, responsableName, closedStatusIds, false, addedTaskIds, sinceTimestamp);
                         }
                     } catch (error) {
                         console.error(`Erreur lors de la récupération des tâches complétées de la liste ${list.id}:`, error.message);
