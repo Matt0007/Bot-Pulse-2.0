@@ -223,10 +223,22 @@ async function displayCategoryPage(interaction, messageId, page, useUpdate = fal
     
     const selectRow = new ActionRowBuilder().addComponents(categorySelect);
     
-    // Créer les boutons de navigation
+    const isInitialStep = !!taskData.initialCategoryStep;
     const buttons = [];
     
-    // Bouton Précédent
+    if (isInitialStep) {
+        // Étape initiale (après le modal) : Annuler à gauche, puis pagination
+        buttons.push(new ButtonBuilder().setCustomId('tache_add_cancel').setLabel('Annuler').setStyle(ButtonStyle.Danger));
+    } else {
+        // Depuis le récap (params) : Précédent à gauche, puis pagination
+        buttons.push(
+            new ButtonBuilder()
+                .setCustomId(`tache_add_category_back_${messageId}`)
+                .setLabel('← Précédent')
+                .setStyle(ButtonStyle.Secondary)
+        );
+    }
+    
     if (totalPages > 1) {
         buttons.push(
             new ButtonBuilder()
@@ -235,8 +247,6 @@ async function displayCategoryPage(interaction, messageId, page, useUpdate = fal
                 .setStyle(ButtonStyle.Secondary)
                 .setDisabled(page === 0)
         );
-        
-        // Bouton Suivant
         buttons.push(
             new ButtonBuilder()
                 .setCustomId(`tache_add_category_page_next_${messageId}`)
@@ -246,17 +256,12 @@ async function displayCategoryPage(interaction, messageId, page, useUpdate = fal
         );
     }
     
-    // Bouton Retour
-    buttons.push(
-        new ButtonBuilder()
-            .setCustomId(`tache_add_category_back_${messageId}`)
-            .setLabel('← Précédent')
-            .setStyle(ButtonStyle.Secondary)
-    );
-    
     const buttonsRow = new ActionRowBuilder().addComponents(buttons);
     
-    const tempEmbed = createInfoEmbed('📋 Sélection de la catégorie', `Choisissez une catégorie pour la tâche${totalPages > 1 ? `\n*Page ${page + 1} sur ${totalPages}*` : ''}`);
+    const pageText = totalPages > 1 ? `\n*Page ${page + 1} sur ${totalPages}*` : '';
+    const tempEmbed = isInitialStep
+        ? createInfoEmbed('📋 Catégorie obligatoire', `**Nom de la tâche :** ${taskData.taskName || '—'}\n\nChoisissez une catégorie pour la tâche (étape obligatoire).${pageText}`)
+        : createInfoEmbed('📋 Sélection de la catégorie', `Choisissez une catégorie pour la tâche${pageText}`);
     // Utiliser interaction.update() si c'est une pagination, sinon éditer le message
     if (useUpdate) {
         await interaction.update({ embeds: [tempEmbed], components: [selectRow, buttonsRow] });
