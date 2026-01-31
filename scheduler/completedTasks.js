@@ -133,9 +133,9 @@ async function checkAndSendCompletedTasks(client) {
                 ]);
 
                 const projectIds = projects.map(p => p.projectId);
-                for (const responsable of responsables) {
-                    await sendCompletedTasks(client, config.guildId, responsable.responsableName, responsable.channelId, projectIds);
-                }
+                await Promise.all(responsables.map(r =>
+                    sendCompletedTasks(client, config.guildId, r.responsableName, r.channelId, projectIds)
+                ));
             } catch (error) {
                 console.error(`Erreur lors du traitement du serveur ${config.guildId}:`, error);
             }

@@ -21,6 +21,8 @@ model GuildConfig {
   morningHour       String?  @default("8:00")
   completedHour     String?  @default("22:00")
   fridayStatsHour   String?  @default("18:00")
+  overdueReminderHour String? @default("15:00")
+  overdueReminderEnabled Boolean? @default(true)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 

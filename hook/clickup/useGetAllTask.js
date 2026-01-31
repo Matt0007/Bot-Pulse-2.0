@@ -48,7 +48,8 @@ function processTask(task, allTasks, responsableName, isSubtask = false, listId 
             isSubtask: isActuallySubtask,
             listId: listId || task.list?.id,
             statusId: task.status?.id,
-            statusName: task.status?.status
+            statusName: task.status?.status,
+            due_date: task.due_date || null
         });
     }
 
