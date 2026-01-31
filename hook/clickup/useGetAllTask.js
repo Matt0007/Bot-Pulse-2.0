@@ -3,8 +3,9 @@ import { getTomorrowParisTimestamp } from '../../utils/date.js';
 
 /**
  * Fonction helper pour traiter une tâche et ses sous-tâches
+ * @param {boolean} [ignoreStartDate=false] - Si true, n'exclut pas les tâches dont la date de début est future (pour rappels échéances)
  */
-function processTask(task, allTasks, responsableName, isSubtask = false, listId = null) {
+function processTask(task, allTasks, responsableName, isSubtask = false, listId = null, ignoreStartDate = false) {
     const responsableField = task.custom_fields?.find(f => {
         const name = f?.name?.toLowerCase().trim();
         return name === 'responsable';
@@ -23,9 +24,8 @@ function processTask(task, allTasks, responsableName, isSubtask = false, listId 
     if (responsable && responsable.toUpperCase() === responsableName.toUpperCase() && 
         (statut.includes('faire') || statut.includes('en cours'))) {
         
-        // Ne pas afficher si la date de début est demain ou plus tard (Paris)
-        // On compare à minuit demain : ainsi les tâches "aujourd'hui" (même avec une heure type 04:00) sont bien affichées
-        if (task.start_date) {
+        // Ne pas afficher si la date de début est demain ou plus tard (Paris) — sauf si ignoreStartDate
+        if (!ignoreStartDate && task.start_date) {
             const startTs = Number(task.start_date);
             const todayParis = getTomorrowParisTimestamp();
             if (Number.isFinite(startTs) && startTs >= todayParis) {
@@ -56,7 +56,7 @@ function processTask(task, allTasks, responsableName, isSubtask = false, listId 
     // Traiter les sous-tâches si elles existent
     if (task.subtasks && Array.isArray(task.subtasks)) {
         for (const subtask of task.subtasks) {
-            processTask(subtask, allTasks, responsableName, true, listId);
+            processTask(subtask, allTasks, responsableName, true, listId, ignoreStartDate);
         }
     }
 }
@@ -66,9 +66,10 @@ function processTask(task, allTasks, responsableName, isSubtask = false, listId 
  * @param {string} guildId - ID du serveur Discord
  * @param {string} responsableName - Nom du responsable dans ClickUp
  * @param {Array<string>} configuredProjectIds - Liste des IDs de projets (spaces) configurés
+ * @param {{ ignoreStartDate?: boolean }} [options] - Si ignoreStartDate=true, inclut les tâches dont la date de début est future (pour rappels)
  * @returns {Promise<Array>} - Liste des tâches du responsable
  */
-export async function useGetAllTask(guildId, responsableName, configuredProjectIds) {
+export async function useGetAllTask(guildId, responsableName, configuredProjectIds, options = {}) {
     try {
         // Si aucun projet n'est configuré, retourner une liste vide
         if (!configuredProjectIds || configuredProjectIds.length === 0) {
@@ -76,6 +77,7 @@ export async function useGetAllTask(guildId, responsableName, configuredProjectI
         }
 
         const apiKey = await getClickUpApiKey(guildId);
+        const ignoreStartDate = options.ignoreStartDate === true;
         const allTasks = [];
 
         // Fonction helper pour récupérer et traiter les tâches d'une liste
@@ -85,7 +87,7 @@ export async function useGetAllTask(guildId, responsableName, configuredProjectI
                 const tasks = tasksData.tasks || [];
 
                 for (const task of tasks) {
-                    processTask(task, allTasks, responsableName, false, listId);
+                    processTask(task, allTasks, responsableName, false, listId, ignoreStartDate);
                 }
             } catch (error) {
                 console.error(`Erreur lors de la récupération des tâches de la liste ${listId}:`, error.message);

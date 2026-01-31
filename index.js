@@ -14,6 +14,7 @@ import { startCompletedTasksScheduler, handleCompletedTasksPagination } from './
 import { startMorningTasksScheduler, handleMorningTasksPagination } from './scheduler/morningTasks.js';
 import { startFridayStatsScheduler } from './scheduler/fridayStats.js';
 import { startOverdueReminderScheduler } from './scheduler/overdueReminder.js';
+import { startTomorrowReminderScheduler } from './scheduler/tomorrowReminder.js';
 
 dotenv.config();
 
@@ -55,6 +56,7 @@ client.once('ready', () => {
     startMorningTasksScheduler(client);
     startFridayStatsScheduler(client);
     startOverdueReminderScheduler(client);
+    startTomorrowReminderScheduler(client);
 });
 
 // Gestionnaire d'erreur global pour capturer les erreurs non gérées
@@ -221,7 +223,7 @@ client.on('interactionCreate', async interaction => {
                 console.error('Erreur lors du traitement du modal de date:', error);
                 await replyErrorIfRepliable(interaction);
             }
-        } else if (interaction.customId === 'hour_morning_modal' || interaction.customId === 'hour_completed_modal' || interaction.customId === 'hour_friday_stats_modal' || interaction.customId === 'hour_overdue_reminder_modal') {
+        } else if (interaction.customId === 'hour_morning_modal' || interaction.customId === 'hour_completed_modal' || interaction.customId === 'hour_friday_stats_modal' || interaction.customId === 'hour_overdue_reminder_modal' || interaction.customId === 'hour_tomorrow_reminder_modal') {
             try {
                 const { hourHandlers } = await import('./components/menuAdmin/hour/hourHandlers.js');
                 if (interaction.customId === 'hour_morning_modal') {
@@ -230,8 +232,10 @@ client.on('interactionCreate', async interaction => {
                     await hourHandlers.hour_completed_modal(interaction);
                 } else if (interaction.customId === 'hour_friday_stats_modal') {
                     await hourHandlers.hour_friday_stats_modal(interaction);
-                } else {
+                } else if (interaction.customId === 'hour_overdue_reminder_modal') {
                     await hourHandlers.hour_overdue_reminder_modal(interaction);
+                } else {
+                    await hourHandlers.hour_tomorrow_reminder_modal(interaction);
                 }
             } catch (error) {
                 console.error('Erreur lors du traitement du modal d\'heure:', error);
