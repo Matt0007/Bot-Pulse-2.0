@@ -62,8 +62,13 @@ export async function sendFridayStats(client, guildId, targetChannelId = null) {
             return;
         }
 
-        await channel.send({ embeds: [embed] });
-        console.log(`[Scheduler Friday Stats] ✅ Message envoyé pour guildId ${guildId}`);
+        const msg = await channel.send({ embeds: [embed] });
+        try {
+            await msg.pin();
+        } catch (pinErr) {
+            console.log(`[Scheduler Friday Stats] ⚠️ Épinglage impossible pour guildId ${guildId}:`, pinErr?.message ?? pinErr);
+        }
+        console.log(`[Scheduler Friday Stats] ✅ Message envoyé (épinglé) pour guildId ${guildId}`);
     } catch (error) {
         console.error(`[Scheduler Friday Stats] Erreur pour guildId ${guildId}:`, error);
     }

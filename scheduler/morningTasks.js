@@ -12,7 +12,7 @@ function formatResponsableName(name) {
     return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
 }
 
-function createMorningPaginationComponents(tasks, currentPage) {
+export function createMorningPaginationComponents(tasks, currentPage) {
     const totalPages = Math.ceil(tasks.length / ITEMS_PER_PAGE);
     if (totalPages <= 1) return [];
     return [new ActionRowBuilder().addComponents(
@@ -21,7 +21,7 @@ function createMorningPaginationComponents(tasks, currentPage) {
     )];
 }
 
-function createMorningEmbed(responsablesDisplay, tasksList, footerText) {
+export function createMorningEmbed(responsablesDisplay, tasksList, footerText) {
     return new EmbedBuilder()
         .setTitle(`🌅 Bonjour ${responsablesDisplay} !`)
         .setDescription(tasksList)
@@ -93,6 +93,10 @@ async function checkAndSendMorningTasks(client) {
             console.log(`[Scheduler Morning] Week-end détecté (jour ${dayOfWeek}), pas d'envoi`);
             return;
         }
+        if (dayOfWeek === 1) {
+            console.log(`[Scheduler Morning] Lundi détecté, géré par mondayMorning`);
+            return;
+        }
 
         const guildConfigs = await prisma.guildConfig.findMany({
             where: { morningHour: { not: null }, clickupApiKey: { not: null } }
@@ -143,12 +147,12 @@ async function checkAndSendMorningTasks(client) {
 
 export function startMorningTasksScheduler(client) {
     const timezone = process.env.TZ || 'Europe/Paris';
-    // Scheduler qui s'exécute toutes les minutes (lundi à vendredi) pour vérifier l'heure exacte
-    cron.schedule('* * * * 1-5', () => checkAndSendMorningTasks(client), {
+    // Scheduler qui s'exécute toutes les minutes (mardi à vendredi) — le lundi est géré par mondayMorning
+    cron.schedule('* * * * 2-5', () => checkAndSendMorningTasks(client), {
         scheduled: true,
         timezone: timezone
     });
-    console.log(`✅ Scheduler des tâches matinales démarré (lundi à vendredi uniquement, vérification chaque minute, timezone: ${timezone})`);
+    console.log(`✅ Scheduler des tâches matinales démarré (mardi à vendredi uniquement, timezone: ${timezone})`);
 }
 
 export async function handleMorningTasksPagination(interaction) {
@@ -165,7 +169,7 @@ export async function handleMorningTasksPagination(interaction) {
             });
         }
 
-        const { tasks, currentPage } = cachedData;
+        const { tasks, currentPage, mondayIntroText, mondayColor } = cachedData;
         let newPage = currentPage;
         if (interaction.customId === 'tache-list-page-prev') {
             newPage = Math.max(0, currentPage - 1);
@@ -177,9 +181,23 @@ export async function handleMorningTasksPagination(interaction) {
 
         const tasksList = createTaskList(tasks, newPage);
         const totalPages = Math.ceil(tasks.length / ITEMS_PER_PAGE);
-        const responsablesDisplay = interaction.message.embeds[0]?.title?.replace('🌅 Bonjour ', '')?.replace(' !', '') || 'Responsable';
-        const embed = createMorningEmbed(responsablesDisplay, tasksList, createFooterText(tasks, totalPages, newPage));
+        const footerText = createFooterText(tasks, totalPages, newPage);
         const components = createMorningPaginationComponents(tasks, newPage);
+
+        let embed;
+        if (mondayIntroText != null) {
+            const description = newPage === 0
+                ? mondayIntroText + '\n\n---\n\n' + tasksList
+                : tasksList;
+            embed = new EmbedBuilder()
+                .setTitle('🌅 Bon Lundi et bonne semaine !')
+                .setDescription(description.length > 4096 ? description.substring(0, 4093) + '...' : description)
+                .setFooter({ text: footerText })
+                .setColor(mondayColor ?? 0x5865F2);
+        } else {
+            const responsablesDisplay = interaction.message.embeds[0]?.title?.replace('🌅 Bonjour ', '')?.replace(' !', '') || 'Responsable';
+            embed = createMorningEmbed(responsablesDisplay, tasksList, footerText);
+        }
 
         await interaction.update({ embeds: [embed], components: components.length > 0 ? components : undefined });
     } catch (error) {

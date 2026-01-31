@@ -57,3 +57,14 @@ export function getStartOfWeekParisTimestamp() {
     const oneDayMs = 24 * 60 * 60 * 1000;
     return todayParis - daysSinceMonday * oneDayMs;
 }
+
+/**
+ * Retourne le timestamp (ms) de minuit (00:00) du samedi de la semaine en cours en heure de Paris.
+ * Utilisé pour filtrer "échéances cette semaine" (lundi 00:00 -> vendredi 23:59).
+ * @returns {number} Timestamp en millisecondes (UTC)
+ */
+export function getEndOfWeekParisTimestamp() {
+    const startOfWeek = getStartOfWeekParisTimestamp();
+    const oneDayMs = 24 * 60 * 60 * 1000;
+    return startOfWeek + 5 * oneDayMs;
+}

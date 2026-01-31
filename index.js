@@ -12,6 +12,7 @@ import { tacheAddModal, tacheAddConfirm, tacheAddConfirmBack, tacheAddConfirmFin
 import { tacheAddCategoryPagination } from './components/tache/add/paramsSelect.js';
 import { startCompletedTasksScheduler, handleCompletedTasksPagination } from './scheduler/completedTasks.js';
 import { startMorningTasksScheduler, handleMorningTasksPagination } from './scheduler/morningTasks.js';
+import { startMondayMorningScheduler } from './scheduler/mondayMorning.js';
 import { startFridayStatsScheduler } from './scheduler/fridayStats.js';
 import { startOverdueReminderScheduler } from './scheduler/overdueReminder.js';
 import { startTomorrowReminderScheduler } from './scheduler/tomorrowReminder.js';
@@ -54,6 +55,7 @@ client.once('ready', () => {
     // Démarrer les schedulers
     startCompletedTasksScheduler(client);
     startMorningTasksScheduler(client);
+    startMondayMorningScheduler(client);
     startFridayStatsScheduler(client);
     startOverdueReminderScheduler(client);
     startTomorrowReminderScheduler(client);
@@ -139,7 +141,8 @@ client.on('interactionCreate', async interaction => {
     if (interaction.isButton()) {
         try {
             if (interaction.customId === 'tache-list-page-prev' || interaction.customId === 'tache-list-page-next') {
-                if (interaction.message.embeds[0]?.title?.startsWith('🌅 Bonjour')) {
+                const firstTitle = interaction.message.embeds[0]?.title ?? '';
+                if (firstTitle.startsWith('🌅 Bonjour') || firstTitle.startsWith('🌅 Bon Lundi')) {
                     await handleMorningTasksPagination(interaction);
                 } else {
                     await handleTachePagination(interaction);
