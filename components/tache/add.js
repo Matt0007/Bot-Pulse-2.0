@@ -102,16 +102,16 @@ export function buildRecapDescription(taskData, projectName, listName, responsab
         paramsSection = `**Priorité :** ${priorityText}`;
     }
     
-    // Date de début
+    // Date de début (affichage en heure de Paris pour cohérence avec la date par défaut)
     if (taskData.startDate) {
         const startDate = new Date(taskData.startDate);
-        paramsSection += `\n**Date de début :** ${startDate.toLocaleDateString('fr-FR')}`;
+        paramsSection += `\n**Date de début :** ${startDate.toLocaleDateString('fr-FR', { timeZone: 'Europe/Paris' })}`;
     }
     
-    // Date d'échéance
+    // Date d'échéance (affichage en heure de Paris)
     if (taskData.dueDate) {
         const dueDate = new Date(taskData.dueDate);
-        paramsSection += `\n**Date d'échéance :** ${dueDate.toLocaleDateString('fr-FR')}`;
+        paramsSection += `\n**Date d'échéance :** ${dueDate.toLocaleDateString('fr-FR', { timeZone: 'Europe/Paris' })}`;
     }
     
     // Catégorie
