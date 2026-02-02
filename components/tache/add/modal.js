@@ -76,7 +76,7 @@ export async function tacheAddModal(interaction) {
             initialCategoryStep: false
         };
         taskDataCache.set(messageId, taskData);
-        
+         
         // Premier message : chargement des catégories (pour avoir l'ID du message)
         const loadingEmbed = createInfoEmbed('📋 Catégorie obligatoire', 'Chargement des catégories...');
         const reply = await interaction.editReply({ embeds: [loadingEmbed], components: [] });
