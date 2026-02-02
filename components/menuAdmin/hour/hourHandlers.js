@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } from 'discord.js';
 import prisma from '../../../utils/prisma.js';
 import { createInfoEmbed } from '../../common/embeds.js';
 import { hourMorningDetail, hourMorningModify, hourMorningModal } from './morning.js';
@@ -20,7 +20,8 @@ async function hourList(interaction) {
         const overdueReminderHour = guildConfig?.overdueReminderHour ?? '15:00';
         const tomorrowReminderHour = guildConfig?.tomorrowReminderHour ?? '20:00';
         const embed = createInfoEmbed('⏰ Gestion des heures', `**Matin :** ${morningHour}\n**Complété :** ${completedHour}\n**Stats vendredi :** ${fridayStatsHour}\n**Tâches en retard :** ${overdueReminderHour}\n**Échéances demain :** ${tomorrowReminderHour}`);
-        const buttons = new ActionRowBuilder()
+        // Discord allows max 5 components per Action Row
+        const hourButtons = new ActionRowBuilder()
             .addComponents(
                 new ButtonBuilder()
                     .setCustomId('hour_morning_button')
@@ -41,17 +42,20 @@ async function hourList(interaction) {
                 new ButtonBuilder()
                     .setCustomId('hour_tomorrow_reminder_button')
                     .setLabel('Échéances demain')
-                    .setStyle(ButtonStyle.Primary),
+                    .setStyle(ButtonStyle.Primary)
+            );
+        const backButton = new ActionRowBuilder()
+            .addComponents(
                 new ButtonBuilder()
                     .setCustomId('back_to_main')
                     .setLabel('Retour')
                     .setStyle(ButtonStyle.Secondary)
             );
 
-        await interaction.update({ embeds: [embed], components: [buttons] });
+        await interaction.update({ embeds: [embed], components: [hourButtons, backButton] });
     } catch (error) {
         console.error('Erreur lors de l\'affichage de la liste des heures:', error);
-        await interaction.reply({ content: '❌ Erreur lors de l\'affichage.', ephemeral: true });
+        await interaction.reply({ content: '❌ Erreur lors de l\'affichage.', flags: MessageFlags.Ephemeral });
     }
 }
 
