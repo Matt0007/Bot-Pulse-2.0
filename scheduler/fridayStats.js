@@ -88,7 +88,7 @@ async function checkAndSendFridayStats(client) {
         const guildConfigs = await prisma.guildConfig.findMany({
             where: { fridayStatsHour: { not: null }, clickupApiKey: { not: null } }
         });
-
+        
         for (const config of guildConfigs) {
             if (!config.fridayStatsHour) continue;
 
