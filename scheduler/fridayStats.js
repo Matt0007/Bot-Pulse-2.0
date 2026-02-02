@@ -88,7 +88,7 @@ async function checkAndSendFridayStats(client) {
         const guildConfigs = await prisma.guildConfig.findMany({
             where: { fridayStatsHour: { not: null }, clickupApiKey: { not: null } }
         });
-        
+
         for (const config of guildConfigs) {
             if (!config.fridayStatsHour) continue;
 
@@ -98,6 +98,7 @@ async function checkAndSendFridayStats(client) {
             console.log(`[Scheduler Friday Stats] Exécution pour guildId ${config.guildId} à ${config.fridayStatsHour}`);
             await sendFridayStats(client, config.guildId);
         }
+        
     } catch (error) {
         console.error('Erreur lors de la vérification des stats vendredi:', error);
     }
