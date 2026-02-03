@@ -215,9 +215,12 @@ async function displayCategoryPage(interaction, messageId, page, useUpdate = fal
         .setCustomId(`tache_add_category_select_${messageId}`)
         .setPlaceholder(totalPages > 1 ? `Sélectionner une catégorie (Page ${page + 1}/${totalPages})...` : 'Sélectionner une catégorie...');
     
-    pageCategories.forEach(cat => {
+    taskData.categoryPage = page;
+    taskDataCache.set(messageId, taskData);
+    
+    pageCategories.forEach((cat, idx) => {
         categorySelect.addOptions(
-            new StringSelectMenuOptionBuilder().setLabel(cat).setValue(cat)
+            new StringSelectMenuOptionBuilder().setLabel(cat).setValue(String(idx))
         );
     });
     

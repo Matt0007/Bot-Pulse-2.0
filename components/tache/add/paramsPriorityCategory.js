@@ -47,11 +47,13 @@ export async function tacheAddPriorityBack(interaction) {
 /**
  * Gère la sélection de la catégorie
  */
+const ITEMS_PER_PAGE = 25;
+
 export async function tacheAddCategorySelect(interaction) {
     try {
         const customId = interaction.customId;
         const messageId = customId.replace('tache_add_category_select_', '');
-        const category = interaction.values[0];
+        const value = interaction.values[0];
         
         const taskData = taskDataCache.get(messageId);
         if (!taskData) {
@@ -60,7 +62,9 @@ export async function tacheAddCategorySelect(interaction) {
         }
         const loadingEmbed = createInfoEmbed('📋 Sélection de la catégorie', 'Mise à jour de la catégorie...');
         await interaction.update({ embeds: [loadingEmbed], components: [] });
-        taskData.category = category;
+        const indexInPage = parseInt(value, 10);
+        const categoryIndex = (taskData.categoryPage ?? 0) * ITEMS_PER_PAGE + indexInPage;
+        taskData.category = Number.isNaN(indexInPage) || !taskData.categories?.[categoryIndex] ? value : taskData.categories[categoryIndex];
         taskData.initialCategoryStep = false;
         taskDataCache.set(messageId, taskData);
         

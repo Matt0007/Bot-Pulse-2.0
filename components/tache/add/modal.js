@@ -119,8 +119,8 @@ export async function tacheAddModal(interaction) {
         const categorySelect = new StringSelectMenuBuilder()
             .setCustomId(`tache_add_category_select_${messageId}`)
             .setPlaceholder(totalPages > 1 ? 'Sélectionner une catégorie (Page 1/' + totalPages + ')...' : 'Sélectionner une catégorie...');
-        pageCategories.forEach(cat => {
-            categorySelect.addOptions(new StringSelectMenuOptionBuilder().setLabel(cat).setValue(cat));
+        pageCategories.forEach((cat, idx) => {
+            categorySelect.addOptions(new StringSelectMenuOptionBuilder().setLabel(cat).setValue(String(idx)));
         });
         
         const selectRow = new ActionRowBuilder().addComponents(categorySelect);
