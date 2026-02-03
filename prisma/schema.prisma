@@ -25,7 +25,7 @@ model GuildConfig {
 
   @@map("guild_configs")
 }
-
+ 
 // Projets ClickUp par serveur
 model GuildProject {
   id        String   @id @default(cuid())
