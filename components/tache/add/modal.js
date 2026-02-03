@@ -1,7 +1,8 @@
 import { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } from 'discord.js';
 import prisma from '../../../utils/prisma.js';
 import { getTodayParisTimestamp } from '../../../utils/date.js';
-import { getClickUpApiKey, clickUpRequest } from '../../../utils/clickup.js';
+import { useGetAllProject } from '../../../hook/clickup/useGetAllProject.js';
+import { useGetCategoriesInList } from '../../../hook/clickup/useGetCategoriesInList.js';
 import { createErrorEmbed, createInfoEmbed } from '../../common/embeds.js';
 import { taskDataCache, updateRecap, buildRecapDescription } from '../add.js';
 
@@ -32,7 +33,58 @@ async function sendRecapReply(interaction, messageId, projectName, listName, res
 }
 
 /**
- * Traite la soumission du modal initial : étape catégorie obligatoire puis récapitulatif
+ * Charge les catégories de la liste sélectionnée et affiche l'étape catégorie ou le récap
+ * (utilisé après sélection liste dans le flux initial)
+ */
+export async function showCategoryStepOrRecap(interaction, messageId) {
+    const taskData = taskDataCache.get(messageId);
+    if (!taskData) return;
+    const guildId = interaction.guild.id;
+    const responsable = await prisma.guildResponsable.findUnique({ where: { channelId: interaction.channel.id } });
+    const responsableInfo = responsable ? `\n**Responsable :** ${responsable.responsableName}` : '';
+    const projectName = taskData.projectName || 'Projet inconnu';
+    const listName = taskData.listName || 'Liste inconnue';
+    let categories = [];
+    try {
+        const { categoriesUsed } = await useGetCategoriesInList(guildId, taskData.listId);
+        categories = categoriesUsed;
+    } catch (err) {
+        console.error('Erreur récupération catégories (showCategoryStepOrRecap):', err);
+    }
+    if (categories.length === 0) {
+        await sendRecapReply(interaction, messageId, projectName, listName, responsableInfo, taskData);
+        return;
+    }
+    taskData.categories = categories;
+    taskData.categoryPage = 0;
+    taskData.initialCategoryStep = true;
+    taskDataCache.set(messageId, taskData);
+    const ITEMS_PER_PAGE = 25;
+    const totalPages = Math.ceil(categories.length / ITEMS_PER_PAGE);
+    const pageCategories = categories.slice(0, ITEMS_PER_PAGE);
+    const categorySelect = new StringSelectMenuBuilder()
+        .setCustomId(`tache_add_category_select_${messageId}`)
+        .setPlaceholder(totalPages > 1 ? 'Sélectionner une catégorie (Page 1/' + totalPages + ')...' : 'Sélectionner une catégorie...');
+    pageCategories.forEach((cat, idx) => {
+        categorySelect.addOptions(new StringSelectMenuOptionBuilder().setLabel(cat).setValue(String(idx)));
+    });
+    const selectRow = new ActionRowBuilder().addComponents(categorySelect);
+    const navButtons = [
+        new ButtonBuilder().setCustomId('tache_add_cancel').setLabel('Annuler').setStyle(ButtonStyle.Danger)
+    ];
+    if (totalPages > 1) {
+        navButtons.push(
+            new ButtonBuilder().setCustomId(`tache_add_category_page_prev_${messageId}`).setLabel(' << ').setStyle(ButtonStyle.Secondary).setDisabled(true),
+            new ButtonBuilder().setCustomId(`tache_add_category_page_next_${messageId}`).setLabel(' >> ').setStyle(ButtonStyle.Secondary).setDisabled(totalPages <= 1)
+        );
+    }
+    const buttonsRow = new ActionRowBuilder().addComponents(navButtons);
+    const categoryEmbed = createInfoEmbed('📋 Catégorie', `**Nom :** ${taskData.taskName}\n**Liste :** ${listName}\n\nChoisissez une catégorie pour la tâche (celles de la liste sélectionnée).`);
+    await interaction.editReply({ embeds: [categoryEmbed], components: [selectRow, buttonsRow] });
+}
+
+/**
+ * Traite la soumission du modal initial : étape Emplacement/liste puis Catégorie puis récapitulatif
  */
 export async function tacheAddModal(interaction) {
     try {
@@ -46,26 +98,15 @@ export async function tacheAddModal(interaction) {
             return;
         }
         
-        const guildConfig = await prisma.guildConfig.findUnique({ where: { guildId } });
-        if (!guildConfig?.selectedListId) {
-            await interaction.editReply({ embeds: [createErrorEmbed('Aucune liste d\'ajout configurée. Veuillez configurer une liste dans les paramètres.')] });
-            return;
-        }
-        
-        const listId = guildConfig.selectedListId;
-        const listName = guildConfig.selectedListName;
-        const projectName = guildConfig.selectedProjectName || 'Projet inconnu';
         const responsable = await prisma.guildResponsable.findUnique({ where: { channelId: interaction.channel.id } });
         const responsableName = responsable?.responsableName || null;
-        const responsableInfo = responsable ? `\n**Responsable :** ${responsable.responsableName}` : '';
-        
         const messageId = `${interaction.user.id}_${Date.now()}`;
         const todayTimestamp = getTodayParisTimestamp();
         const taskData = {
-            listId,
-            listName,
-            projectId: guildConfig.selectedProjectId || null,
-            projectName,
+            listId: null,
+            listName: null,
+            projectId: null,
+            projectName: null,
             taskName,
             responsableName,
             startDate: todayTimestamp,
@@ -73,70 +114,34 @@ export async function tacheAddModal(interaction) {
             priority: 3,
             category: null,
             messageId: null,
-            initialCategoryStep: false
+            initialCategoryStep: false,
+            initialLocationStep: true
         };
         taskDataCache.set(messageId, taskData);
          
-        // Premier message : chargement des catégories (pour avoir l'ID du message)
-        const loadingEmbed = createInfoEmbed('📋 Catégorie obligatoire', 'Chargement des catégories...');
+        const loadingEmbed = createInfoEmbed('📋 Emplacement / liste', 'Chargement des projets...');
         const reply = await interaction.editReply({ embeds: [loadingEmbed], components: [] });
         taskData.messageId = reply.id;
         taskDataCache.set(messageId, taskData);
         
-        let categories = [];
-        try {
-            const apiKey = await getClickUpApiKey(guildId);
-            const tasksData = await clickUpRequest(apiKey, `/list/${listId}/task?archived=false&limit=1`);
-            if (tasksData.tasks?.length > 0) {
-                const sampleTask = tasksData.tasks[0];
-                const categoryField = sampleTask.custom_fields?.find(f => {
-                    const name = f?.name?.toLowerCase().trim();
-                    return name === 'catégorie' || name === 'categorie' || name === 'category';
-                });
-                if (categoryField?.type === 'drop_down' && categoryField.type_config?.options) {
-                    categories = categoryField.type_config.options.map(opt => opt.name).filter(Boolean);
-                }
-            }
-        } catch (err) {
-            console.error('Erreur récupération catégories (modal):', err);
-        }
-        
-        if (categories.length === 0) {
-            await sendRecapReply(interaction, messageId, projectName, listName, responsableInfo, taskData);
+        const apiProjects = await useGetAllProject(guildId);
+        if (!apiProjects || apiProjects.length === 0) {
+            await interaction.editReply({ embeds: [createErrorEmbed('Aucun projet trouvé sur ClickUp.')] });
             return;
         }
-        
-        // Étape obligatoire : sélection de la catégorie
-        taskData.categories = categories;
-        taskData.categoryPage = 0;
-        taskData.initialCategoryStep = true;
-        taskDataCache.set(messageId, taskData);
-        
-        const ITEMS_PER_PAGE = 25;
-        const totalPages = Math.ceil(categories.length / ITEMS_PER_PAGE);
-        const pageCategories = categories.slice(0, ITEMS_PER_PAGE);
-        
-        const categorySelect = new StringSelectMenuBuilder()
-            .setCustomId(`tache_add_category_select_${messageId}`)
-            .setPlaceholder(totalPages > 1 ? 'Sélectionner une catégorie (Page 1/' + totalPages + ')...' : 'Sélectionner une catégorie...');
-        pageCategories.forEach((cat, idx) => {
-            categorySelect.addOptions(new StringSelectMenuOptionBuilder().setLabel(cat).setValue(String(idx)));
-        });
-        
-        const selectRow = new ActionRowBuilder().addComponents(categorySelect);
-        const navButtons = [
-            new ButtonBuilder().setCustomId('tache_add_cancel').setLabel('Annuler').setStyle(ButtonStyle.Danger)
-        ];
-        if (totalPages > 1) {
-            navButtons.push(
-                new ButtonBuilder().setCustomId(`tache_add_category_page_prev_${messageId}`).setLabel(' << ').setStyle(ButtonStyle.Secondary).setDisabled(true),
-                new ButtonBuilder().setCustomId(`tache_add_category_page_next_${messageId}`).setLabel(' >> ').setStyle(ButtonStyle.Secondary).setDisabled(totalPages <= 1)
-            );
-        }
-        const buttonsRow = new ActionRowBuilder().addComponents(navButtons);
-        
-        const categoryEmbed = createInfoEmbed('📋 Catégorie obligatoire', `**Nom de la tâche :** ${taskData.taskName}\n\nChoisissez une catégorie pour la tâche (étape obligatoire).`);
-        await interaction.editReply({ embeds: [categoryEmbed], components: [selectRow, buttonsRow] });
+        const selectOptions = apiProjects.slice(0, 25).map(project => ({
+            label: project.name.length > 100 ? project.name.substring(0, 97) + '...' : project.name,
+            value: project.id
+        }));
+        const projectSelect = new StringSelectMenuBuilder()
+            .setCustomId(`tache_add_location_project_${messageId}`)
+            .setPlaceholder('Sélectionnez un projet')
+            .addOptions(selectOptions);
+        const selectRow = new ActionRowBuilder().addComponents(projectSelect);
+        const cancelButton = new ActionRowBuilder()
+            .addComponents(new ButtonBuilder().setCustomId('tache_add_cancel').setLabel('Annuler').setStyle(ButtonStyle.Danger));
+        const locationEmbed = createInfoEmbed('📋 Emplacement / liste', `**Nom de la tâche :** ${taskData.taskName}\n\nChoisissez le **projet** puis la **liste** où ajouter la tâche. Les catégories affichées à l'étape suivante seront celles de la liste sélectionnée.`);
+        await interaction.editReply({ embeds: [locationEmbed], components: [selectRow, cancelButton] });
     } catch (error) {
         console.error('Erreur lors de la création de la tâche:', error);
         const errorMessage = error.message?.includes('API ClickUp') ? error.message : 'Impossible de créer la tâche dans ClickUp.';

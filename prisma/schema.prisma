@@ -14,10 +14,6 @@ model GuildConfig {
   id                String   @id @default(cuid())
   guildId           String   @unique
   clickupApiKey     String?
-  selectedListId    String?
-  selectedListName  String?
-  selectedProjectId String?
-  selectedProjectName String?
   morningHour       String?  @default("8:00")
   completedHour     String?  @default("22:00")
   fridayStatsHour   String?  @default("18:00")

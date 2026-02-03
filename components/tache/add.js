@@ -38,16 +38,6 @@ export async function tacheAdd(interaction) {
             }
         }
         
-        // Vérifier que la liste d'ajout est configurée
-        const guildConfig = await prisma.guildConfig.findUnique({
-            where: { guildId }
-        });
-        
-        if (!guildConfig?.selectedListId || !guildConfig?.selectedListName) {
-            await interaction.reply({ embeds: [createErrorEmbed('Vous devez d\'abord sélectionner une liste d\'ajout dans les paramètres (Paramètre > Liste d\'ajout).')], ephemeral: true });
-            return;
-        }
-        
         // Créer le modal pour demander le nom de la tâche
         const modal = new ModalBuilder()
             .setCustomId('tache_add_modal')
@@ -140,14 +130,9 @@ export async function updateRecap(interaction, messageId) {
         return;
     }
     
-    const guildId = interaction.guild.id;
-    const guildConfig = await prisma.guildConfig.findUnique({
-        where: { guildId }
-    });
-    
-    // Utiliser les valeurs du cache si disponibles, sinon celles de la config
-    const projectName = taskData.projectName || guildConfig?.selectedProjectName || 'Projet inconnu';
-    const listName = taskData.listName || guildConfig?.selectedListName || 'Liste inconnue';
+    // Utiliser les valeurs du cache (projet/liste choisis lors de l'ajout)
+    const projectName = taskData.projectName || 'Projet inconnu';
+    const listName = taskData.listName || 'Liste inconnue';
     
     const responsable = await prisma.guildResponsable.findUnique({
         where: { channelId: interaction.channel.id }

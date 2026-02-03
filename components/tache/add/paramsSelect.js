@@ -1,5 +1,5 @@
 import { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } from 'discord.js';
-import { getClickUpApiKey, clickUpRequest } from '../../../utils/clickup.js';
+import { useGetCategoriesInList } from '../../../hook/clickup/useGetCategoriesInList.js';
 import { createErrorEmbed, createInfoEmbed } from '../../common/embeds.js';
 import { taskDataCache, updateRecap } from '../add.js';
 
@@ -90,21 +90,8 @@ export async function tacheAddParamsSelect(interaction) {
             
             try {
                 const guildId = interaction.guild.id;
-                const apiKey = await getClickUpApiKey(guildId);
-                const tasksData = await clickUpRequest(apiKey, `/list/${taskData.listId}/task?archived=false&limit=1`);
-                
-                let categories = [];
-                if (tasksData.tasks && tasksData.tasks.length > 0) {
-                    const sampleTask = tasksData.tasks[0];
-                    const categoryField = sampleTask.custom_fields?.find(f => {
-                        const name = f?.name?.toLowerCase().trim();
-                        return name === 'catégorie' || name === 'categorie' || name === 'category';
-                    });
-                    
-                    if (categoryField && categoryField.type === 'drop_down' && categoryField.type_config?.options) {
-                        categories = categoryField.type_config.options.map(opt => opt.name).filter(Boolean);
-                    }
-                }
+                const { categoriesUsed } = await useGetCategoriesInList(guildId, taskData.listId);
+                const categories = categoriesUsed;
                 
                 if (categories.length === 0) {
                     // Si pas de catégories, remettre le récapitulatif

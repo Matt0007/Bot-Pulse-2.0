@@ -147,13 +147,7 @@ export async function clickupResetConfirm(interaction) {
         
         await prisma.guildConfig.upsert({
             where: { guildId },
-            update: { 
-                clickupApiKey: encryptedApiKey,
-                selectedListId: null,
-                selectedListName: null,
-                selectedProjectId: null,
-                selectedProjectName: null
-            },
+            update: { clickupApiKey: encryptedApiKey },
             create: { guildId, clickupApiKey: encryptedApiKey }
         });
         
@@ -172,7 +166,7 @@ export async function clickupResetConfirm(interaction) {
         
         const embed = createSuccessEmbed(
             '✅ Réinitialisation terminée',
-            'La clé API ClickUp a été mise à jour et toutes les données ont été réinitialisées.\n\n**Données supprimées :**\n• Tous les projets configurés\n• Tous les responsables et leurs channels\n• La catégorie "responsable"\n• La liste d\'ajout sélectionnée\n• L\'historique (une nouvelle entrée a été créée)'
+            'La clé API ClickUp a été mise à jour et toutes les données ont été réinitialisées.\n\n**Données supprimées :**\n• Tous les projets configurés\n• Tous les responsables et leurs channels\n• La catégorie "responsable"\n• L\'historique (une nouvelle entrée a été créée)'
         );
         await interaction.update({ embeds: [embed], components: [createOkButton('clickup_button')] });
     } catch (error) {

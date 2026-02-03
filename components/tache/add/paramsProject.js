@@ -3,6 +3,7 @@ import { useGetAllProject } from '../../../hook/clickup/useGetAllProject.js';
 import { useGetAllLists } from '../../../hook/clickup/useGetAllLists.js';
 import { createErrorEmbed, createInfoEmbed } from '../../common/embeds.js';
 import { taskDataCache, updateRecap } from '../add.js';
+import { showCategoryStepOrRecap } from './modal.js';
 
 /**
  * Gère la sélection du projet pour modifier l'emplacement
@@ -140,12 +141,17 @@ export async function tacheAddLocationListSelect(interaction) {
         taskData.listName = listName;
         taskData.projectId = projectId;
         taskData.projectName = project.name;
-        // Supprimer le projectId temporaire
         delete taskData.tempProjectId;
         
-        taskDataCache.set(messageId, taskData);
+        // Flux initial : après sélection liste, afficher catégories de cette liste puis récap
+        if (taskData.initialLocationStep) {
+            delete taskData.initialLocationStep;
+            taskDataCache.set(messageId, taskData);
+            await showCategoryStepOrRecap(interaction, messageId);
+            return;
+        }
         
-        // Remettre le récapitulatif à jour
+        taskDataCache.set(messageId, taskData);
         await updateRecap(interaction, messageId);
     } catch (error) {
         console.error('Erreur lors de la sélection de la liste:', error);
