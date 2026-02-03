@@ -5,7 +5,7 @@ import { createErrorEmbed, createInfoEmbed, createWarningEmbed } from '../common
 export { tacheAddModal, tacheAddModifyModal } from './add/modal.js';
 export { tacheAddParamsSelect } from './add/paramsSelect.js';
 export { tacheAddDateModal } from './add/paramsDate.js';
-export { tacheAddLocationProjectSelect, tacheAddLocationListSelect, tacheAddLocationBack } from './add/paramsProject.js';
+export { tacheAddLocationProjectSelect, tacheAddLocationListSelect, tacheAddLocationBack, tacheAddLocationBackToProject, tacheAddCategoryBackToList } from './add/paramsProject.js';
 export { tacheAddPrioritySelect, tacheAddPriorityBack, tacheAddCategorySelect, tacheAddCategoryBack } from './add/paramsPriorityCategory.js';
 export { tacheAddConfirm, tacheAddConfirmBack, tacheAddConfirmFinal, tacheAddConfirmCategorySelect } from './add/confirm.js';
 

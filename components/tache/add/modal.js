@@ -70,6 +70,7 @@ export async function showCategoryStepOrRecap(interaction, messageId) {
     });
     const selectRow = new ActionRowBuilder().addComponents(categorySelect);
     const navButtons = [
+        new ButtonBuilder().setCustomId(`tache_add_category_back_to_list_${messageId}`).setLabel('← Retour').setStyle(ButtonStyle.Secondary),
         new ButtonBuilder().setCustomId('tache_add_cancel').setLabel('Annuler').setStyle(ButtonStyle.Danger)
     ];
     if (totalPages > 1) {

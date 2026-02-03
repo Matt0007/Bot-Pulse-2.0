@@ -8,7 +8,7 @@ import { initializeGuild } from './utils/GuildInit.js';
 import { handleButton } from './components/menuAdmin/menuAdminHandlers.js';
 import { handleTachePagination } from './components/tache/liste/pagination.js';
 import { handleTacheSelect, handleTacheStatusChange } from './components/tache/liste/index.js';
-import { tacheAddModal, tacheAddConfirm, tacheAddConfirmBack, tacheAddConfirmFinal, tacheAddConfirmCategorySelect, tacheAddCancel, tacheAddModifyModal, tacheAddParamsSelect, tacheAddDateModal, tacheAddPrioritySelect, tacheAddPriorityBack, tacheAddCategorySelect, tacheAddCategoryBack, tacheAddLocationProjectSelect, tacheAddLocationListSelect, tacheAddLocationBack } from './components/tache/add.js';
+import { tacheAddModal, tacheAddConfirm, tacheAddConfirmBack, tacheAddConfirmFinal, tacheAddConfirmCategorySelect, tacheAddCancel, tacheAddModifyModal, tacheAddParamsSelect, tacheAddDateModal, tacheAddPrioritySelect, tacheAddPriorityBack, tacheAddCategorySelect, tacheAddCategoryBack, tacheAddCategoryBackToList, tacheAddLocationProjectSelect, tacheAddLocationListSelect, tacheAddLocationBack, tacheAddLocationBackToProject } from './components/tache/add.js';
 import { tacheAddCategoryPagination } from './components/tache/add/paramsSelect.js';
 import { startCompletedTasksScheduler, handleCompletedTasksPagination } from './scheduler/completedTasks.js';
 import { startMorningTasksScheduler, handleMorningTasksPagination } from './scheduler/morningTasks.js';
@@ -159,10 +159,14 @@ client.on('interactionCreate', async interaction => {
                 await tacheAddConfirm(interaction);
             } else if (interaction.customId === 'tache_add_cancel') {
                 await tacheAddCancel(interaction);
+            } else if (interaction.customId.startsWith('tache_add_location_back_to_project_')) {
+                await tacheAddLocationBackToProject(interaction);
             } else if (interaction.customId.startsWith('tache_add_location_back_')) {
                 await tacheAddLocationBack(interaction);
             } else if (interaction.customId.startsWith('tache_add_priority_back_')) {
                 await tacheAddPriorityBack(interaction);
+            } else if (interaction.customId.startsWith('tache_add_category_back_to_list_')) {
+                await tacheAddCategoryBackToList(interaction);
             } else if (interaction.customId.startsWith('tache_add_category_back_')) {
                 await tacheAddCategoryBack(interaction);
             } else if (interaction.customId.startsWith('tache_add_category_page_')) {
