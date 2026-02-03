@@ -3,6 +3,7 @@ name: Deploy Bot
 on:
   push:
     branches: [ "main" ]
+  workflow_dispatch:  # Déclenchement manuel depuis l'onglet Actions
 
 jobs:
   deploy:
