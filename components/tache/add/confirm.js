@@ -1,5 +1,6 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } from 'discord.js';
 import prisma from '../../../utils/prisma.js';
+import { getTodayParisTimestamp } from '../../../utils/date.js';
 import { useAddTask } from '../../../hook/clickup/useAddTask.js';
 import { useGetCategoriesInList } from '../../../hook/clickup/useGetCategoriesInList.js';
 import { createErrorEmbed, createInfoEmbed, createSuccessEmbed, createWarningEmbed } from '../../common/embeds.js';
@@ -149,13 +150,15 @@ async function doCreateTask(interaction, messageId) {
         return;
     }
     await interaction.editReply({ embeds: [createInfoEmbed('⏳ Création de la tâche...', 'Veuillez patienter pendant la création de la tâche dans ClickUp.')], components: [] });
+    const validTs = (ts) => typeof ts === 'number' && Number.isFinite(ts) && ts > 0;
+    const startDate = validTs(taskData.startDate) ? taskData.startDate : getTodayParisTimestamp();
     await useAddTask(
         guildId,
         listId,
         taskData.taskName,
         taskData.responsableName,
         taskData.dueDate,
-        taskData.startDate,
+        startDate,
         taskData.category,
         taskData.priority
     );

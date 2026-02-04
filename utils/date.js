@@ -7,29 +7,32 @@
  * Retourne le timestamp (ms) de minuit (00:00) aujourd'hui en heure de Paris.
  * Utilisé pour que "aujourd'hui" soit cohérent partout (add + liste), quel que soit
  * le fuseau du serveur ou de l'utilisateur (ex: Indonésie vs Paris).
+ * Utilise formatToParts pour éviter les variations de format selon l'environnement.
  * @returns {number} Timestamp en millisecondes (UTC)
  */
 export function getTodayParisTimestamp() {
     const now = new Date();
-    const parisDateParts = now.toLocaleString('fr-FR', {
+    const formatter = new Intl.DateTimeFormat('en-CA', {
         timeZone: 'Europe/Paris',
         year: 'numeric',
         month: '2-digit',
         day: '2-digit'
-    }).split('/');
-
-    const day = parseInt(parisDateParts[0], 10);
-    const month = parseInt(parisDateParts[1], 10) - 1;
-    const year = parseInt(parisDateParts[2], 10);
+    });
+    const parts = formatter.formatToParts(now);
+    const get = (type) => parseInt(parts.find(p => p.type === type)?.value ?? '0', 10);
+    const year = get('year');
+    const month = get('month') - 1;
+    const day = get('day');
 
     const utcMidnight = Date.UTC(year, month, day);
-    const parisHour = parseInt(new Date(utcMidnight).toLocaleString('en-GB', {
+    const hourFormatter = new Intl.DateTimeFormat('en-GB', {
         timeZone: 'Europe/Paris',
         hour: 'numeric',
         hour12: false
-    }), 10);
-    const parisMidnight = utcMidnight - parisHour * 3600 * 1000;
-    return parisMidnight;
+    });
+    const parisHour = parseInt(hourFormatter.format(utcMidnight), 10);
+    const parisMidnight = utcMidnight - (Number.isNaN(parisHour) ? 0 : parisHour) * 3600 * 1000;
+    return Number.isFinite(parisMidnight) && parisMidnight > 0 ? parisMidnight : Date.UTC(year, month, day);
 }
 
 /**
