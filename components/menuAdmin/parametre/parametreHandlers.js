@@ -6,7 +6,7 @@ import { historyButton } from './history.js';
 export const parametreHandlers = {
     parametre_button: async (interaction) => {
         const embed = createInfoEmbed('⚙️ Section Paramètre', 'Gestion des paramètres')
-            .setFooter({ text: 'v2.6.2' });  
+            .setFooter({ text: 'v2.6.3' });  
         const buttons = new ActionRowBuilder()
             .addComponents(
                 new ButtonBuilder()

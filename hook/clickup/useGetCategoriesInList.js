@@ -55,7 +55,7 @@ export async function useGetCategoriesInList(guildId, listId) {
         try {
             const tasksData = await clickUpRequest(
                 apiKey,
-                `/list/${listId}/task?archived=false&limit=${limit}&page=${page}`
+                `/list/${listId}/task?archived=false&include_closed=true&subtasks=true&limit=${limit}&page=${page}`
             );
             const tasks = tasksData.tasks || [];
             if (tasks.length === 0) break;
